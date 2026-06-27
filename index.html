@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SE7EN</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B1220">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+[onclick]{cursor:pointer;}
+button{font-family:inherit;font-size:inherit;background:none;border:none;text-align:left;cursor:pointer;}
+:root{
+  --bg:#0B1220;
+  --bg2:#111827;
+  --bg3:#1A2540;
+  --bg4:#223060;
+  --border:#1E3058;
+  --border2:#2A4080;
+  --gold:#D4A843;
+  --gold2:#F0C860;
+  --text:#F0F4FF;
+  --text2:#9DB0D0;
+  --text3:#5A7090;
+  --text4:#2E4060;
+  --green:#3CB878;
+  --gbg:#0A2818;
+  --gborder:#1A5030;
+  --red:#E05040;
+  --rbg:#2A0C0C;
+  --rborder:#602020;
+  --blue:#4A80D0;
+  --bbg:#0A1A30;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html{height:-webkit-fill-available;}
+body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;overflow:hidden;}
+.screen{display:none;flex-direction:column;height:100%;height:-webkit-fill-available;width:100%;position:absolute;top:0;left:0;background:var(--bg);}
+.screen.active{display:-webkit-flex;display:flex;}
+
+/* ── TOP BAR ── */
+.top-bar{padding:1em 1.14em 0.71em;flex-shrink:0;background:var(--bg2);border-bottom:2px solid var(--border2);}
+.top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.71em;}
+.screen-title{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.55em;font-weight:700;letter-spacing:1px;}
+.top-actions{display:flex;gap:0.57em;}
+.btn-icon{background:var(--bg3);border:1.5px solid var(--border2);border-radius:8px;padding:0.64em 15px;color:var(--text2);font-size:0.93em;font-weight:500;cursor:pointer;}
+.btn-icon:active{background:var(--bg4);color:var(--text);}
+.search-wrap{background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:0.71em 1em;display:flex;align-items:center;gap:0.57em;}
+.search-wrap input{background:transparent;border:none;outline:none;color:var(--text);font-size:1.14em;flex:1;}
+.search-wrap input::placeholder{color:var(--text4);}
+
+/* ── CUSTOMER LIST ── */
+.customer-list{-webkit-flex:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.71em 0.85em 6px;}
+.customer-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.71em;margin-top:0.71em;}
+.cust-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.57em;}
+.cust-item{background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:0.71em 0.85em;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;gap:0.57em;width:100%;}
+.cust-item:active{border-color:var(--gold);}
+.cust-item-tap{background:none;border:none;text-align:left;padding:0;flex:1;cursor:pointer;}
+.cust-item-main{flex:1;cursor:pointer;min-width:0;}
+.cust-name{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;font-size:1.4em;color:var(--text);font-weight:600;}
+.cust-bal{font-size:1em;font-weight:600;margin-top:3px;}
+.cust-bal.debt{color:var(--red);}
+.cust-bal.credit{color:var(--green);}
+.cust-bal.zero{color:var(--text3);}
+.btn-add-cash{background:var(--gbg);border:1.5px solid var(--green);border-radius:8px;padding:0.64em 1em;color:var(--green);font-size:0.93em;font-weight:600;cursor:pointer;flex-shrink:0;}
+.btn-add-cash:active{opacity:0.7;}
+.btn-settled-list{background:#1A3010;border:1.5px solid var(--green);border-radius:8px;padding:0.64em 1em;color:var(--green);font-size:0.93em;font-weight:700;cursor:pointer;flex-shrink:0;}
+.btn-settled-list:active{opacity:0.7;}
+.empty-hint{text-align:center;color:var(--text3);padding:50px 20px;font-size:1.14em;line-height:1.8;}
+.cust-add-btn{background:var(--bg3);border:2px dashed var(--border2);border-radius:14px;padding:1.14em;margin-bottom:0.71em;text-align:center;color:var(--text3);font-size:1.14em;font-weight:600;cursor:pointer;letter-spacing:0.5px;}
+.cust-add-btn:active{background:var(--bg4);border-color:var(--gold);color:var(--gold);}
+.home-footer{flex-shrink:0;background:var(--bg2);border-top:2px solid var(--border2);padding:0.71em 1em calc(0.71em + var(--safe-bottom));}
+.home-totals{display:flex;gap:0.71em;margin-bottom:0.71em;}
+.btn-quick-cash{width:100%;background:var(--gbg);border:2px solid var(--green);border-radius:12px;padding:1em;color:var(--green);font-size:1.14em;font-weight:700;cursor:pointer;text-align:center;}
+.btn-quick-cash:active{opacity:0.8;}
+.home-total-box{flex:1;background:var(--bg3);border:1.5px solid var(--border2);border-radius:10px;padding:0.71em 0.85em;text-align:center;}
+.home-total-lbl{font-size:0.71em;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:4px;}
+.home-total-val{font-size:1.28em;font-weight:700;}
+.home-total-val.red{color:var(--red);}
+.home-total-val.green{color:var(--green);}
+.home-total-val.gold{color:var(--gold2);}
+
+/* ── CHARGE SCREEN ── */
+.charge-tabs{display:flex;gap:4px;margin-top:0.71em;}
+.charge-tab{flex:1;padding:0.57em;border-radius:8px;font-size:0.93em;font-weight:600;cursor:pointer;text-align:center;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text3);}
+.charge-tab.active{background:var(--bg4);border-color:var(--gold);color:var(--gold2);}
+.charge-tab:active{opacity:0.8;}
+.charge-hdr-row{display:flex;justify-content:space-between;align-items:center;gap:0.71em;}
+.charge-customer-label{font-size:0.78em;color:var(--text3);font-weight:500;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.charge-name{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.55em;font-weight:700;}
+.hdr-btns{display:flex;gap:0.57em;flex-shrink:0;}
+.btn-settled{background:#1A3010;border:2px solid var(--green);border-radius:10px;padding:0.64em 1.14em;color:var(--green);font-size:0.93em;font-weight:700;cursor:pointer;letter-spacing:0.5px;}
+.btn-settled:active{opacity:0.8;}
+.btn-del-inline{background:var(--rbg);border:1.5px solid var(--rborder);border-radius:8px;padding:0.64em 1em;color:var(--red);font-size:0.93em;font-weight:500;cursor:pointer;}
+.btn-del-inline:active{opacity:0.7;}
+
+.charge-body{-webkit-flex:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1em 1em 0.57em;}
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.57em;margin-bottom:0.85em;}
+.mode-btn{padding:0.93em 0.57em;border-radius:10px;font-size:1em;font-weight:600;cursor:pointer;text-align:center;border:2px solid var(--border2);background:var(--bg3);color:var(--text3);}
+.mode-btn.active-debt{background:var(--red);border-color:var(--red);color:#fff;}
+.mode-btn.active-pay{background:var(--green);border-color:var(--green);color:#fff;}
+.mode-btn.active-credit{background:var(--blue);border-color:var(--blue);color:#fff;}
+.mode-btn:active{opacity:0.8;}
+
+.amount-section{background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:1em;margin-bottom:0.85em;}
+.section-label{font-size:0.71em;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:0.71em;}
+.amount-display{display:flex;align-items:center;background:var(--bg);border:2px solid var(--border2);border-radius:10px;padding:0.71em 1.14em;gap:0.57em;margin-bottom:0.71em;}
+.amount-display:focus-within{border-color:var(--gold);}
+.amount-input{background:transparent;border:none;outline:none;color:var(--gold2);font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;font-size:2.7em;font-weight:600;flex:1;min-width:0;}
+.amount-eur{color:var(--text3);font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;font-size:2em;}
+.quick-btns{display:flex;flex-wrap:wrap;gap:0.57em;}
+.quick-btn{background:var(--bg3);border:1.5px solid var(--border2);border-radius:8px;padding:0.71em 1em;color:var(--gold);font-size:1.07em;font-weight:600;cursor:pointer;white-space:nowrap;}
+.quick-btn:active{background:var(--bg4);border-color:var(--gold);}
+
+.note-section{background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:1em;margin-bottom:0.85em;}
+.note-input{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:0.71em 1em;color:var(--text);font-size:1.07em;width:100%;outline:none;}
+.note-input:focus{border-color:var(--gold);}
+.note-input::placeholder{color:var(--text4);}
+
+/* ── CUSTOMER HISTORY ── */
+.cust-hist-section{background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;margin-bottom:0.85em;overflow:hidden;}
+.cust-hist-hdr{padding:0.71em 1em;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg3);}
+.cust-hist-title{font-size:0.71em;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-weight:600;}
+.cust-hist-bal{font-size:1.07em;font-weight:700;}
+.cust-hist-bal.debt{color:var(--red);}
+.cust-hist-bal.credit{color:var(--green);}
+.cust-hist-bal.zero{color:var(--text3);}
+.cust-hist-list{max-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.cust-hist-item{display:flex;justify-content:space-between;align-items:center;padding:0.71em 1em;border-bottom:1px solid var(--border);}
+.cust-hist-item:last-child{border-bottom:none;}
+.cust-hist-left{flex:1;}
+.cust-hist-type{font-size:1em;color:var(--text2);font-weight:500;}
+.cust-hist-note{font-size:0.85em;color:var(--text3);margin-top:2px;}
+.cust-hist-time{font-size:0.93em;color:var(--text3);margin-top:2px;font-weight:500;}
+.cust-hist-amt{font-size:1.14em;font-weight:700;}
+.cust-hist-amt.debt{color:var(--red);}
+.cust-hist-amt.pay{color:var(--green);}
+.cust-hist-amt.cash{color:var(--blue);}
+.cust-hist-empty{padding:1.14em;text-align:center;color:var(--text4);font-size:0.93em;}
+
+.charge-footer{padding:0.85em 1em calc(0.85em + var(--safe-bottom));flex-shrink:0;background:var(--bg2);border-top:2px solid var(--border2);display:flex;gap:0.71em;}.btn-back-charge{background:var(--bg3);border:2px solid var(--border2);border-radius:12px;padding:18px;color:var(--text2);font-size:1.2em;font-weight:600;cursor:pointer;flex:1;text-align:center;}
+.btn-back-charge:active{background:var(--bg4);}
+.btn-confirm-charge{border-radius:12px;padding:18px;font-size:1.35em;font-weight:700;cursor:pointer;flex:2;text-align:center;}
+.btn-confirm-charge.debt{background:var(--red);border:2px solid var(--red);color:#fff;}
+.btn-confirm-charge.pay{background:var(--green);border:2px solid var(--green);color:#fff;}
+.btn-confirm-charge.cash{background:var(--blue);border:2px solid var(--blue);color:#fff;}
+.btn-confirm-charge:active{opacity:0.8;}
+.btn-confirm-charge:disabled{opacity:0.3;cursor:default;}
+
+/* ── DAY SUMMARY ── */
+.summary-hdr{background:var(--bg2);padding:1em 1.14em;border-bottom:2px solid var(--border2);flex-shrink:0;}
+.summary-title{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.4em;font-weight:700;margin-bottom:3px;}
+.summary-period{font-size:0.93em;color:var(--text3);}
+.summary-totals{display:flex;gap:0.71em;padding:0.85em 1em;background:var(--bg3);border-bottom:2px solid var(--border2);flex-shrink:0;}
+.total-box{flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:0.85em 0.71em;text-align:center;}
+.total-lbl{font-size:0.71em;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:6px;}
+.total-val{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;font-size:1.4em;font-weight:700;}
+.total-val.red{color:var(--red);}
+.total-val.green{color:var(--green);}
+.total-val.gold{color:var(--gold2);}
+.summary-list{-webkit-flex:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.71em 0.85em calc(1.14em + var(--safe-bottom));}
+.summary-row{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:1em 1.14em;margin-bottom:0.57em;display:flex;justify-content:space-between;align-items:center;width:100%;}
+.summary-row-left{flex:1;min-width:0;display:flex;flex-direction:column;}.summary-row-name{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;font-size:1.28em;color:var(--text);font-weight:600;}
+.summary-row-detail{font-size:0.93em;color:var(--text3);margin-top:3px;}
+.summary-row-tab{font-size:1.4em;font-weight:700;color:var(--red);}
+.summary-row-paid{font-size:0.93em;font-weight:600;color:var(--green);margin-top:3px;}
+.summary-row-right{text-align:right;flex-shrink:0;}
+.summary-empty{text-align:center;color:var(--text3);padding:50px 20px;font-size:1.14em;}
+.summary-footer{padding:0.85em 1em calc(0.85em + var(--safe-bottom));flex-shrink:0;background:var(--bg2);border-top:2px solid var(--border2);}
+
+.month-row{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:0.85em 1.14em;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;width:100%;}
+.month-row:active{border-color:var(--gold);}
+.month-row-date{font-size:1.07em;font-weight:600;color:var(--text);flex:1;}
+.month-row-right{text-align:right;flex-shrink:0;}
+.month-row-tab{font-size:1.07em;font-weight:700;color:var(--red);}
+.month-row-paid{font-size:0.93em;font-weight:600;color:var(--green);margin-top:2px;}
+.btn-month-nav{background:var(--bg4);border:1.5px solid var(--border2);border-radius:8px;padding:0.57em 1.14em;color:var(--gold);font-size:1.07em;font-weight:600;cursor:pointer;}
+.btn-month-nav:active{opacity:0.8;}
+.month-empty{text-align:center;color:var(--text3);padding:50px 20px;font-size:1.14em;}
+.tx-row{display:flex;justify-content:space-between;align-items:center;padding:0.71em 4px;border-bottom:1px solid var(--border);}
+.tx-row:last-child{border-bottom:none;}
+.tx-row-left{flex:1;}
+.tx-row-name{font-size:1.07em;font-weight:600;color:var(--text);}
+.tx-row-note{font-size:0.85em;color:var(--text3);margin-top:2px;}
+.tx-row-time{font-size:1em;color:var(--text2);margin-top:2px;font-weight:500;}
+.tx-row-right{display:flex;align-items:center;gap:0.71em;}
+.tx-row-amt{font-size:1.14em;font-weight:700;}
+.tx-row-amt.debt{color:var(--red);}
+.tx-row-amt.pay{color:var(--green);}
+.tx-row-amt.cash{color:var(--blue);}
+.tx-row-amt.card{color:var(--blue);}
+.btn-tx-del{background:var(--rbg);border:1px solid var(--rborder);border-radius:6px;padding:5px 0.71em;color:var(--red);font-size:0.85em;cursor:pointer;flex-shrink:0;}
+.btn-tx-del:active{opacity:0.7;}
+.btn-tx-edit{background:var(--bg4);border:1px solid var(--gold);border-radius:6px;padding:5px 0.71em;color:var(--gold);font-size:0.85em;cursor:pointer;flex-shrink:0;}
+.btn-tx-edit:active{opacity:0.7;}
+
+/* ── SETTINGS ── */
+.settings-body{-webkit-flex:1;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:1em 1em calc(1.14em + var(--safe-bottom));}
+#quick-settings-list{padding-bottom:0.57em;}
+.settings-section{margin-bottom:22px;}
+.settings-section-title{font-size:0.71em;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:0.71em;padding-bottom:8px;border-bottom:1.5px solid var(--border2);}
+.quick-list{display:flex;flex-direction:column;gap:0.57em;width:100%;}
+.quick-row{display:flex;gap:0.57em;align-items:center;width:100%;}
+.quick-row input{background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;padding:11px 1em;color:var(--gold2);font-size:1.28em;font-weight:600;flex:1;outline:none;min-width:0;}
+.quick-row input:focus{border-color:var(--gold);}
+.quick-row input::placeholder{color:var(--text4);}
+.btn-rm{background:var(--rbg);border:1.5px solid var(--rborder);border-radius:8px;padding:11px 1em;color:var(--red);cursor:pointer;font-size:1.14em;}
+.btn-rm:active{opacity:0.7;}
+.btn-add-quick{background:var(--bg3);border:2px dashed var(--border2);border-radius:8px;padding:0.78em;color:var(--text3);cursor:pointer;font-size:1em;text-align:center;margin-top:4px;}
+.btn-add-quick:active{background:var(--bg4);}
+.cust-manage-list{display:flex;flex-direction:column;gap:0.57em;}
+.cust-manage-row{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:0.85em 1em;display:flex;justify-content:space-between;align-items:center;}
+.cust-manage-name{font-size:1.14em;font-weight:600;color:var(--text);}
+.cust-manage-bal{font-size:0.93em;font-weight:600;margin-top:2px;}
+.cust-manage-bal.debt{color:var(--red);}
+.cust-manage-bal.credit{color:var(--green);}
+.cust-manage-bal.zero{color:var(--text3);}
+.btn-del-cust{background:var(--rbg);border:1.5px solid var(--rborder);border-radius:6px;padding:7px 13px;color:var(--red);cursor:pointer;font-size:0.93em;font-weight:500;}
+.btn-del-cust:active{opacity:0.7;}
+.danger-zone{background:var(--rbg);border:1.5px solid var(--rborder);border-radius:12px;padding:1em;display:flex;flex-direction:column;gap:0.71em;}
+.btn-danger{background:transparent;border:1.5px solid var(--red);border-radius:8px;padding:0.85em 1.14em;color:var(--red);cursor:pointer;font-size:1em;font-weight:500;text-align:center;}
+.btn-danger:active{background:#3A0808;}
+.settings-footer{padding:0.85em 1em calc(0.85em + var(--safe-bottom));flex-shrink:0;background:var(--bg2);border-top:2px solid var(--border2);}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;justify-content:flex-end;align-items:stretch;padding:0;}
+.modal-bg.open{display:flex;}
+.modal-sheet{background:var(--bg2);border:2px solid var(--gold);border-radius:18px 18px 0 0;padding:24px 20px calc(24px + var(--safe-bottom));width:100%;}
+.modal-title{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.28em;font-weight:700;margin-bottom:1.14em;text-align:center;}
+.modal-input{background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;padding:1em 1.14em;color:var(--text);font-size:1.28em;width:100%;margin-bottom:1.14em;outline:none;}
+.modal-input:focus{border-color:var(--gold);}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:0.71em;}
+.btn-modal-cancel{background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;padding:13px;color:var(--text3);font-size:1.07em;cursor:pointer;text-align:center;font-weight:500;}
+.btn-modal-ok{background:var(--bg4);border:2px solid var(--gold);border-radius:10px;padding:13px;color:var(--gold2);font-size:1.07em;cursor:pointer;text-align:center;font-weight:700;}
+.btn-modal-cancel:active{background:var(--bg3);}
+.btn-modal-ok:active{opacity:0.8;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:calc(24px + var(--safe-bottom));left:50%;transform:translateX(-50%);border-radius:20px;padding:11px 22px;font-size:1em;font-weight:500;z-index:200;opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.toast.ok{background:var(--gbg);border:1.5px solid var(--green);color:var(--green);}
+.toast.err{background:var(--rbg);border:1.5px solid var(--red);color:var(--red);}
+.toast.info{background:var(--bg4);border:1.5px solid var(--gold);color:var(--gold2);}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.btn-full{width:100%;background:var(--bg3);border:2px solid var(--gold);border-radius:12px;padding:18px;color:var(--gold2);font-size:1.2em;font-weight:700;cursor:pointer;text-align:center;}
+.btn-full:active{background:var(--bg4);}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════ SCREEN 1: CUSTOMER LIST ══════════ -->
+<div class="screen active" id="s-customers">
+  <div class="top-bar">
+    <div class="top-row">
+      <div class="screen-title">SE7EN</div>
+      <div class="top-actions">
+        <button class="btn-icon" onclick="openHistory()">History</button>
+        <button class="btn-icon" onclick="openSettings()">Settings</button>
+      </div>
+    </div>
+  </div>
+  <div class="customer-list" id="customer-list"></div>
+  <div class="home-footer">
+    <div class="home-totals" id="home-totals"></div>
+    <div class="home-totals" id="home-totals2"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-quick-cash" style="flex:1;" onclick="openQuickCash()">+ Add cash</button>
+      <button class="btn-quick-cash" style="flex:1;background:var(--bbg);border-color:var(--blue);color:var(--blue);" onclick="openQuickCard()">+ Card payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN: TABLES ══════════ -->
+<div class="screen" id="s-tables">
+  <div class="top-bar">
+    <div class="top-row">
+      <div class="screen-title">Tables</div>
+    </div>
+  </div>
+  <div class="customer-list" id="tables-list"></div>
+  <div class="home-footer">
+    <button class="btn-full" onclick="goHome()">Back</button>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN 2: CHARGE / PAY ══════════ -->
+<div class="screen" id="s-charge">
+  <div class="charge-hdr">
+    <div class="charge-customer-label">Customer</div>
+    <div class="charge-hdr-row">
+      <div>
+        <div class="charge-name" id="charge-name"></div>
+        <div id="charge-debt-date" style="font-size:0.85em;color:var(--red);margin-top:2px;"></div>
+      </div>
+      <div class="hdr-btns">
+        <button class="btn-del-inline" onclick="askDelCurrentCustomer()">Remove</button>
+      </div>
+    </div>
+    <div class="charge-tabs">
+      <button class="charge-tab" id="tab-history" onclick="toggleChargeHistory()" style="flex:1;">History <span id="hist-count"></span></button>
+    </div>
+  </div>
+
+  <!-- TAB: Charge -->
+  <div class="charge-body" id="charge-panel">
+    <div class="mode-toggle">
+      <button class="mode-btn active-debt" id="mode-debt" onclick="setMode('debt')">Add tab</button>
+      <button class="mode-btn" id="mode-pay" onclick="setMode('pay')">Payment</button>
+      <button class="mode-btn" id="mode-credit" onclick="setMode('credit')">Add credit</button>
+    </div>
+    <div class="amount-section">
+      <div class="section-label">Amount</div>
+      <div class="amount-display">
+        <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="amount-input" id="amount-input"
+               placeholder="0.00" oninput="updateConfirmBtn()"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();if(!document.getElementById('confirm-btn').disabled)doCharge();}">
+        <span class="amount-eur">&#x20AC;</span>
+      </div>
+      <div class="quick-btns" id="quick-btns"></div>
+    </div>
+    <div class="note-section">
+      <div class="section-label">Note (optional)</div>
+      <input type="text" class="note-input" id="note-input" placeholder="e.g. Beer, wine, ..."
+             onkeydown="if(event.key==='Enter'){event.preventDefault();if(!document.getElementById('confirm-btn').disabled)doCharge();}">
+    </div>
+  </div>
+
+  <!-- TAB: History -->
+  <div class="charge-body" id="history-panel" style="display:none;">
+    <div class="cust-hist-section">
+      <div class="cust-hist-hdr">
+        <div class="cust-hist-title">Today</div>
+        <div class="cust-hist-bal" id="cust-hist-bal"></div>
+      </div>
+      <div class="cust-hist-list" id="cust-hist-list" style="max-height:none;"></div>
+    </div>
+  </div>
+
+  <!-- Fixed footer — always visible above keyboard -->
+  <div class="charge-footer" id="charge-footer">
+    <button class="btn-back-charge" id="charge-back-btn" onclick="goHome()">Back</button>
+    <button class="btn-confirm-charge debt" id="confirm-btn" onclick="doCharge()" disabled>Add tab</button>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN 3: HISTORY ══════════ -->
+<div class="screen" id="s-history">
+  <div class="top-bar">
+    <div class="top-row">
+      <div class="screen-title">History</div>
+    </div>
+    <div class="charge-tabs">
+      <button class="charge-tab active" id="htab-day" onclick="switchHistoryTab('day')">Today</button>
+      <button class="charge-tab" id="htab-month" onclick="switchHistoryTab('month')">Month</button>
+      <button class="charge-tab" id="htab-raw" onclick="switchHistoryTab('raw')">Raw</button>
+    </div>
+  </div>
+
+  <!-- TAB: Day -->
+  <div class="summary-totals" id="summary-totals"></div>
+  <div class="summary-list" id="summary-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 6px;"></div>
+
+  <!-- TAB: Month -->
+  <div id="hpanel-month" style="display:none;-webkit-flex:1;flex:1;-webkit-flex-direction:column;flex-direction:column;min-height:0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg3);border-bottom:1px solid var(--border);">
+      <button class="btn-month-nav" onclick="changeMonth(-1)">&#x2190; Prev</button>
+      <div style="font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.2em;font-weight:700;" id="month-title-display"></div>
+      <button class="btn-month-nav" onclick="changeMonth(1)">Next &#x2192;</button>
+    </div>
+    <div style="padding:6px 14px;font-size:0.93em;color:var(--text3);" id="month-subtitle"></div>
+    <div class="summary-totals" id="month-totals"></div>
+    <div class="summary-list" id="month-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 6px;"></div>
+  </div>
+
+  <!-- TAB: Raw -->
+  <div id="hpanel-raw" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 6px;"></div>
+
+  <div class="summary-footer">
+    <button class="btn-full" onclick="goHome()">Back</button>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN 5: OWED LIST ══════════ -->
+<div class="screen" id="s-owed">
+  <div class="summary-hdr">
+    <div class="summary-title">Total Owed</div>
+    <div class="summary-period" id="owed-subtitle"></div>
+  </div>
+  <div class="summary-list" id="owed-list"></div>
+  <div class="summary-footer">
+    <button class="btn-full" onclick="goHome()">Back</button>
+  </div>
+</div>
+
+<!-- MODAL: Merge customer -->
+<div class="modal-bg" id="m-merge-cust">
+  <div class="modal-sheet">
+    <div class="modal-title" id="merge-title"></div>
+    <div style="text-align:center;color:var(--text2);font-size:1.07em;margin-bottom:8px;" id="merge-body"></div>
+    <div style="text-align:center;color:var(--text3);font-size:0.93em;margin-bottom:18px;">Same customer keeps history. New customer starts fresh.</div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="doMergeCustomer(false)">New customer</button>
+      <button class="btn-modal-ok" onclick="doMergeCustomer(true)">Same customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Transaction detail -->
+<div class="modal-bg" id="m-tx-detail">
+  <div class="modal-sheet" style="max-height:80vh;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;">
+    <div class="modal-title" id="tx-detail-title" style="margin-bottom:14px;"></div>
+    <div id="tx-detail-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;"></div>
+    <div style="margin-top:14px;">
+      <button class="btn-full" onclick="txDetailBack()">Back</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="s-settings">
+  <div class="top-bar">
+    <div class="top-row">
+      <div class="screen-title">Settings</div>
+    </div>
+    <div class="charge-tabs" style="flex-wrap:wrap;">
+      <button class="charge-tab active" id="stab-amounts" onclick="switchSettingsTab('amounts')">Settings</button>
+      <button class="charge-tab" id="stab-customers" onclick="switchSettingsTab('customers')">Customers</button>
+      <button class="charge-tab" id="stab-cash" onclick="switchSettingsTab('cash')">Cash</button>
+      <button class="charge-tab" id="stab-backup" onclick="switchSettingsTab('backup')">Backup &amp; reset</button>
+      <button class="charge-tab" id="stab-update" onclick="switchSettingsTab('update')">Update</button>
+    </div>
+  </div>
+
+  <!-- TAB: Quick amounts -->
+  <div class="settings-body" id="spanel-amounts">
+    <div class="settings-section">
+      <div class="settings-section-title">Text & button size</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:var(--text2);font-size:1em;">Size</span>
+          <span style="color:var(--gold2);font-size:1em;font-weight:700;" id="font-size-label"></span>
+        </div>
+        <input type="range" id="font-size-slider" min="12" max="36" step="1"
+               style="width:100%;accent-color:var(--gold);"
+               oninput="applyFontSize(parseInt(this.value))">
+        <div style="display:flex;justify-content:space-between;">
+          <button class="btn-icon" onclick="applyFontSize(14)">Default</button>
+          <button class="btn-icon" onclick="applyFontSize(20)">Large</button>
+          <button class="btn-icon" onclick="applyFontSize(28)">X-Large</button>
+          <button class="btn-icon" onclick="applyFontSize(36)">Max</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Quick amounts</div>
+      <div style="color:var(--text3);font-size:0.93em;margin-bottom:10px;">These appear as shortcut buttons when adding a tab or payment.</div>
+      <div class="quick-list" id="quick-settings-list"></div>
+      <button class="btn-add-quick" onclick="addQuickSlot()">+ Add amount</button>
+    </div>
+  </div>
+
+  <!-- TAB: Customers -->
+  <div class="settings-body" id="spanel-customers" style="display:none;">
+    <div class="settings-section">
+      <div class="cust-manage-list" id="cust-manage-list"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Cash adjustment -->
+  <div class="settings-body" id="spanel-cash" style="display:none;">
+    <div class="settings-section">
+      <div class="settings-section-title">Cash adjustment</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">Type</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button class="mode-btn active-pay" id="cadj-add" onclick="setCashAdjType('add')">+ Add cash</button>
+            <button class="mode-btn" id="cadj-remove" onclick="setCashAdjType('remove')">− Remove cash</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">Amount</div>
+          <div class="amount-display" style="margin-bottom:0;">
+            <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="amount-input" id="cadj-amount" placeholder="0.00" style="font-size:28px;" oninput="updateCadjBtn()">
+            <span class="amount-eur">&#x20AC;</span>
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">Date</div>
+          <input type="date" id="cadj-date" style="background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:1.07em;width:100%;outline:none;">
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">Note</div>
+          <input type="text" id="cadj-note" placeholder="e.g. Till correction, cash drop..." class="note-input">
+        </div>
+        <button class="btn-confirm-charge pay" id="cadj-btn" onclick="doCashAdj()" disabled style="padding:14px;font-size:1.14em;">Add cash</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Recent adjustments</div>
+      <div id="cadj-history"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Backup & reset -->
+  <div class="settings-body" id="spanel-backup" style="display:none;">
+    <div class="settings-section">
+      <div class="settings-section-title">Backup</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn-full" onclick="doBackup()">Save backup</button>
+        <div>
+          <button class="btn-full" style="border-color:var(--text3);color:var(--text3);" onclick="document.getElementById('restore-input').click()">Load backup</button>
+          <input type="file" id="restore-input" accept=".json" style="display:none;" onchange="doRestore(this)">
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Purge old data</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="color:var(--text3);font-size:0.93em;">Delete all transactions older than:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div class="section-label" style="margin-bottom:6px;">Month</div>
+            <select id="purge-month" style="background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:1.07em;width:100%;outline:none;">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:6px;">Year</div>
+            <select id="purge-year" style="background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:1.07em;width:100%;outline:none;" id="purge-year"></select>
+          </div>
+        </div>
+        <div style="color:var(--text3);font-size:0.85em;">Everything before the selected month will be deleted.</div>
+        <button class="btn-danger" onclick="purgeBeforeSelected()">Purge old data</button>
+        <div style="color:var(--text3);font-size:0.85em;">Tip: save a backup first before purging.</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Danger zone</div>
+      <div class="danger-zone">
+        <button class="btn-danger" onclick="clearHistory()">Clear all history</button>
+        <button class="btn-danger" onclick="resetAll()">Reset all data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Update software -->
+  <div class="settings-body" id="spanel-update" style="display:none;">
+    <div class="settings-section">
+      <div class="settings-section-title">Connection</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:4px 0;">
+        <span id="online-dot" style="width:14px;height:14px;border-radius:50%;flex-shrink:0;background:var(--text4);"></span>
+        <span id="online-text" style="font-size:1em;color:var(--text2);">Checking...</span>
+      </div>
+      <div style="color:var(--text3);font-size:0.85em;margin-top:6px;">Updates can only be downloaded while online.</div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Software update</div>
+      <div style="color:var(--text3);font-size:0.93em;margin-bottom:10px;">Check the server for a newer version and reload. Your data is kept.</div>
+      <button class="btn-full" onclick="checkForUpdate()">Check for updates</button>
+      <div id="update-status" style="font-size:0.93em;color:var(--text3);margin-top:10px;text-align:center;"></div>
+    </div>
+  </div>
+
+  <div class="settings-footer" style="display:flex;gap:10px;">
+    <button class="btn-full" style="flex:1;" onclick="cancelSettingsAndGoHome()">Back</button>
+    <button class="btn-full" style="flex:2;" onclick="saveSettingsAndGoHome()">Save &amp; close</button>
+  </div>
+</div>
+
+<!-- MODAL: Edit transaction amount -->
+<div class="modal-bg" id="m-edit-tx">
+  <div class="modal-sheet">
+    <div class="modal-title">Edit amount</div>
+    <div style="color:var(--text3);font-size:0.93em;margin-bottom:12px;" id="edit-tx-label"></div>
+    <div class="amount-display" style="margin-bottom:14px;">
+      <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="amount-input" id="edit-tx-input" placeholder="0.00" style="font-size:1.4em;">
+      <span class="amount-eur">&#x20AC;</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-edit-tx')">Cancel</button>
+      <button class="btn-modal-ok" onclick="confirmEditTx()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Rename customer -->
+<div class="modal-bg" id="m-rename-cust">
+  <div class="modal-sheet">
+    <div class="modal-title">Rename customer</div>
+    <input type="text" class="modal-input" id="rename-cust-input" placeholder="New name" maxlength="40">
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-rename-cust')">Cancel</button>
+      <button class="btn-modal-ok" onclick="confirmRenameCust()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Customer full history -->
+<div class="modal-bg" id="m-cust-history">
+  <div class="modal-sheet" style="max-height:85vh;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;">
+    <div class="modal-title" id="cust-hist-modal-title" style="margin-bottom:12px;"></div>
+    <div id="cust-hist-modal-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;"></div>
+    <div style="margin-top:14px;">
+      <button class="btn-full" onclick="closeModal('m-cust-history')">Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Confirm dangerous action -->
+<div class="modal-bg" id="m-confirm">
+  <div class="modal-sheet">
+    <div class="modal-title" id="confirm-title"></div>
+    <div style="text-align:center;color:var(--text2);font-size:1.07em;margin-bottom:18px;" id="confirm-body"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-confirm')">Cancel</button>
+      <button class="btn-modal-ok" style="background:var(--rbg);border-color:var(--red);color:var(--red);" id="confirm-ok-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Quick Cash (no customer) -->
+<div class="modal-bg" id="m-quick-cash">
+  <div class="modal-sheet">
+    <div class="modal-title">Add cash</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;" id="quick-cash-btns"></div>
+    <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="modal-input" id="quick-cash-input" placeholder="0.00">
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-quick-cash')">Cancel</button>
+      <button class="btn-modal-ok" style="background:var(--gbg);border-color:var(--green);color:var(--green);" onclick="doQuickCash()">Add cash</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Quick Card (no customer) -->
+<div class="modal-bg" id="m-quick-card">
+  <div class="modal-sheet">
+    <div class="modal-title">Card payment</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;" id="quick-card-btns"></div>
+    <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="modal-input" id="quick-card-input" placeholder="0.00">
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-quick-card')">Cancel</button>
+      <button class="btn-modal-ok" style="background:var(--bbg);border-color:var(--blue);color:var(--blue);" onclick="doQuickCard()">Card payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Customer -->
+<div class="modal-bg" id="m-add-cust">
+  <div class="modal-sheet">
+    <div class="modal-title">New customer</div>
+    <input type="text" class="modal-input" id="new-cust-input" placeholder="Name" maxlength="40">
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-add-cust')">Cancel</button>
+      <button class="btn-modal-ok" onclick="doAddCustomer()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Cash -->
+<div class="modal-bg" id="m-add-cash">
+  <div class="modal-sheet">
+    <div class="modal-title">Add credit &#x2014; <span id="cash-cust-name"></span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;" id="cash-quick-btns"></div>
+    <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="modal-input" id="cash-amount-input" placeholder="0.00">
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-add-cash')">Cancel</button>
+      <button class="btn-modal-ok" style="background:var(--gbg);border-color:var(--green);color:var(--green);" onclick="doAddCash()">Add credit</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Bill Settled confirm -->
+<div class="modal-bg" id="m-bill-settled">
+  <div class="modal-sheet">
+    <div class="modal-title">Settle bill</div>
+    <div style="text-align:center;color:var(--text2);font-size:1.14em;margin-bottom:4px;" id="settled-cust-text"></div>
+    <div style="text-align:center;color:var(--gold2);font-size:1.4em;font-weight:700;margin-bottom:16px;" id="settled-amount-text"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn-full" style="background:var(--gbg);border-color:var(--green);color:var(--green);" onclick="settlePayment('cash')">Cash</button>
+      <button class="btn-full" style="background:var(--bbg);border-color:var(--blue);color:var(--blue);" onclick="settlePayment('card')">Card</button>
+      <button class="btn-full" style="background:var(--bg4);border-color:var(--gold);color:var(--gold2);" onclick="openSplitPayment()">Split (cash + card)</button>
+      <button class="btn-modal-cancel" onclick="closeModal('m-bill-settled')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Split payment -->
+<div class="modal-bg" id="m-split">
+  <div class="modal-sheet">
+    <div class="modal-title">Split payment</div>
+    <div style="text-align:center;color:var(--text2);font-size:1.07em;margin-bottom:4px;" id="split-cust-text"></div>
+    <div style="text-align:center;color:var(--text3);font-size:0.93em;margin-bottom:16px;">Total owed: <span id="split-total"></span></div>
+
+    <div style="margin-bottom:12px;">
+      <div class="section-label" style="margin-bottom:6px;color:var(--green);">Cash</div>
+      <div class="amount-display" style="margin-bottom:0;">
+        <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="amount-input" id="split-cash" placeholder="0.00" style="font-size:1.4em;" oninput="updateSplitInfo()">
+        <span class="amount-eur">&#x20AC;</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div class="section-label" style="margin-bottom:6px;color:var(--blue);">Card</div>
+      <div class="amount-display" style="margin-bottom:0;">
+        <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="amount-input" id="split-card" placeholder="0.00" style="font-size:1.4em;" oninput="updateSplitInfo()">
+        <span class="amount-eur">&#x20AC;</span>
+      </div>
+    </div>
+
+    <div id="split-info" style="text-align:center;font-size:0.93em;margin-bottom:16px;color:var(--text3);"></div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-split')">Cancel</button>
+      <button class="btn-modal-ok" id="split-confirm-btn" style="background:var(--bg4);border-color:var(--gold);color:var(--gold2);" onclick="confirmSplit()" disabled>Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Remove customer -->
+<div class="modal-bg" id="m-del-cust">
+  <div class="modal-sheet">
+    <div class="modal-title">Remove customer?</div>
+    <div style="text-align:center;color:var(--text2);font-size:1.14em;margin-bottom:8px;" id="del-cust-text"></div>
+    <div style="text-align:center;color:var(--text3);font-size:0.93em;margin-bottom:18px;">History is kept, customer is removed from the list.</div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('m-del-cust')">Cancel</button>
+      <button class="btn-modal-ok" style="background:var(--rbg);border-color:var(--red);color:var(--red);" onclick="confirmDelCustomer()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const STORAGE_KEY = 'pubtab_v1';
+const DEFAULTS = { customers:[], transactions:[], quickAmounts:[2,3,3.5,5,10] };
+
+function getState() {
+  try {
+    let raw = localStorage.getItem(STORAGE_KEY);
+    // Fallback to sessionStorage if localStorage is empty (e.g. after reload on file://)
+    if (!raw) raw = sessionStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const st = JSON.parse(raw);
+      if (!st.quickAmounts) st.quickAmounts = [...DEFAULTS.quickAmounts];
+      if (!st.customers) st.customers = [];
+      if (!st.transactions) st.transactions = [];
+      return st;
+    }
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function saveState(st) {
+  const json = JSON.stringify(st);
+  try { localStorage.setItem(STORAGE_KEY, json); } catch(e) {}
+  try { sessionStorage.setItem(STORAGE_KEY, json); } catch(e) {}
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function f(n) { return Number(n).toFixed(2); }
+function parseAmount(v) { return parseFloat(String(v).replace(',', '.')); }
+function txClass(t) {
+  if (t.type === 'debt') return 'debt';
+  if (t.type === 'credit') return 'credit';
+  if (t.type === 'adjustment') return 'debt';
+  if (t.type === 'pay' && t.method === 'card') return 'card';
+  return 'pay';
+}
+function txLabel(t) {
+  if (t.type === 'debt') return 'Tab';
+  if (t.type === 'credit') return 'Add credit';
+  if (t.type === 'adjustment') return 'Cash removed';
+  if (t.type === 'pay' && t.method === 'card') return 'Card payment';
+  if (t.type === 'pay' && t.method === 'cash') return 'Cash payment';
+  return 'Payment';
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type||'info');
+  setTimeout(() => { el.className = 'toast'; }, 2600);
+}
+function getDayStart(ts) {
+  const d = new Date(ts);
+  if (d.getHours() < 6) d.setDate(d.getDate()-1);
+  d.setHours(6,0,0,0);
+  return d.getTime();
+}
+function todayDayStart() { return getDayStart(Date.now()); }
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+function formatDateRange(ds) {
+  const f2 = new Date(ds), t2 = new Date(ds+86400000);
+  const p = n => n.toString().padStart(2,'0');
+  return p(f2.getDate())+'.'+p(f2.getMonth()+1)+' 06:00 \u2013 '+p(t2.getDate())+'.'+p(t2.getMonth()+1)+' 06:00';
+}
+function balClass(b) { return b<0?'debt':b>0?'credit':'zero'; }
+function balText(b) {
+  if (b<0) return '\u2212'+f(Math.abs(b))+' \u20ac';
+  if (b>0) return '+'+f(b)+' \u20ac';
+  return '0.00 \u20ac';
+}
+
+// ═══════════════════════════════════════════
+// SCREEN: HOME
+// ═══════════════════════════════════════════
+function goHome() { renderCustomerList(); show('s-customers'); }
+
+// ═══════════════════════════════════════════
+// TABLES (permanent customers)
+// ═══════════════════════════════════════════
+const TABLE_DEFS = [
+  { id: '__table1__', name: 'Table 1' },
+  { id: '__table2__', name: 'Table 2' },
+  { id: '__table3__', name: 'Table 3' },
+  { id: '__table4__', name: 'Table 4' },
+  { id: '__smoking1__', name: 'Smoking 1' },
+  { id: '__smoking2__', name: 'Smoking 2' },
+];
+
+function ensureTables() {
+  const st = getState();
+  let changed = false;
+  TABLE_DEFS.forEach(def => {
+    if (!st.customers.find(c => c.id === def.id)) {
+      st.customers.push({ id: def.id, name: def.name, balance: 0, permanent: true });
+      changed = true;
+    }
+  });
+  if (changed) saveState(st);
+}
+
+function openTables() {
+  ensureTables();
+  renderTables();
+  show('s-tables');
+}
+
+function renderTables() {
+  const st = getState();
+  const tables = TABLE_DEFS.map(def => st.customers.find(c => c.id === def.id)).filter(Boolean);
+  const el = document.getElementById('tables-list');
+  el.innerHTML = '<div class="customer-grid">' + tables.map(c => {
+    return `<div class="cust-item">
+      <button class="cust-item-tap" onclick="openCharge('${c.id}')">
+        <div class="cust-name">${esc(c.name)}</div>
+        <div class="cust-bal ${balClass(c.balance)}">${balText(c.balance)}</div>
+      </button>
+      <button class="btn-settled-list" onclick="askBillSettled('${c.id}')">Settled</button>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function renderCustomerList() {
+  const st = getState();
+  const filtered = st.customers.filter(c => !c.permanent && c.id !== '__cash__' && c.id !== '__settled__');
+  const el = document.getElementById('customer-list');
+
+  // Always show Add button at top
+  const addBtn = '<button class="cust-add-btn" onclick="openAddCustomer()">+ New customer</button>';
+  const tablesCard = `<div class="cust-item" style="border-color:var(--gold);">
+      <button class="cust-item-tap" onclick="openTables()" style="display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:100%;">
+        <div class="cust-name" style="color:var(--gold2);">Tables</div>
+      </button>
+    </div>`;
+
+  if (!filtered.length) {
+    el.innerHTML = addBtn + '<div class="customer-grid">' + tablesCard + '</div>';
+  } else {
+    el.innerHTML = addBtn + '<div class="customer-grid">' + tablesCard + filtered.map(c => {
+      return `<div class="cust-item">
+        <button class="cust-item-tap" onclick="openCharge('${c.id}')">
+          <div class="cust-name">${esc(c.name)}</div>
+          <div class="cust-bal ${balClass(c.balance)}">${balText(c.balance)}</div>
+        </button>
+        <button class="btn-settled-list" onclick="askBillSettled('${c.id}')">Settled</button>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  // Render today's totals in footer
+  const ds = todayDayStart(), de = ds + 86400000;
+  const tx = st.transactions.filter(t => t.ts >= ds && t.ts < de);
+  let tab = 0, cashIn = 0, cashTotal = 0, cardTotal = 0;
+  tx.forEach(t => {
+    if (t.type === 'debt') { tab += t.amount; }
+    else if (t.type === 'pay') {
+      cashIn += t.amount;
+      if (t.method === 'card') cardTotal += t.amount;
+      else cashTotal += t.amount; // default/unmarked = cash
+    }
+    else if (t.type === 'adjustment') { cashIn -= t.amount; cashTotal -= t.amount; }
+  });
+  // Total owed = sum of all negative balances across all customers
+  const totalOwed = st.customers.reduce((sum, c) => c.balance < 0 ? sum + Math.abs(c.balance) : sum, 0);
+
+  document.getElementById('home-totals').innerHTML =
+    `<div class="home-total-box" style="border-color:var(--green);">
+       <div class="home-total-lbl">Total</div>
+       <div class="home-total-val ${cashIn >= 0 ? 'green' : 'red'}">${cashIn < 0 ? '\u2212' : ''}${f(Math.abs(cashIn))} \u20ac</div>
+     </div>
+     <div class="home-total-box" onclick="openOwedList()" style="cursor:pointer;border-color:var(--gold);">
+       <div class="home-total-lbl">Total owed</div>
+       <div class="home-total-val gold">${f(totalOwed)} \u20ac</div>
+     </div>`;
+
+  document.getElementById('home-totals2').innerHTML =
+    `<div class="home-total-box" style="border-color:var(--green);">
+       <div class="home-total-lbl">Cash</div>
+       <div class="home-total-val green">${f(cashTotal)} \u20ac</div>
+     </div>
+     <div class="home-total-box" style="border-color:var(--blue);">
+       <div class="home-total-lbl">Card</div>
+       <div class="home-total-val" style="color:var(--blue);">${f(cardTotal)} \u20ac</div>
+     </div>`;
+}
+
+// ═══════════════════════════════════════════
+// QUICK CASH (no customer)
+// ═══════════════════════════════════════════
+function openQuickCash() {
+  const st = getState();
+  document.getElementById('quick-cash-input').value = '';
+  document.getElementById('quick-cash-btns').innerHTML = st.quickAmounts.filter(a=>a>0).sort((a,b)=>a-b)
+    .map(a=>`<button class="quick-btn" onclick="var el=document.getElementById('quick-cash-input');el.value=f((parseAmount(el.value)||0)+${a})">${f(a)} \u20ac</button>`).join('');
+  openModal('m-quick-cash');
+  setTimeout(()=>document.getElementById('quick-cash-input').focus(),200);
+}
+
+function doQuickCash() {
+  const val = parseAmount(document.getElementById('quick-cash-input').value);
+  if (!(val>0)) { toast('Enter an amount','err'); return; }
+  const st = getState();
+  st.transactions.push({
+    id: 't'+Date.now()+'_'+Math.random().toString(36).slice(2),
+    ts: Date.now(),
+    customerId: '__cash__',
+    customerName: 'Cash',
+    type: 'pay',
+    method: 'cash',
+    amount: val,
+    note: 'Walk-in cash'
+  });
+  saveState(st);
+  closeModal('m-quick-cash');
+  renderCustomerList();
+  toast('+'+f(val)+' \u20ac cash added','ok');
+}
+
+function openQuickCard() {
+  const st = getState();
+  document.getElementById('quick-card-input').value = '';
+  document.getElementById('quick-card-btns').innerHTML = st.quickAmounts.filter(a=>a>0).sort((a,b)=>a-b)
+    .map(a=>`<button class="quick-btn" onclick="var el=document.getElementById('quick-card-input');el.value=f((parseAmount(el.value)||0)+${a})">${f(a)} \u20ac</button>`).join('');
+  openModal('m-quick-card');
+  setTimeout(()=>document.getElementById('quick-card-input').focus(),200);
+}
+
+function doQuickCard() {
+  const val = parseAmount(document.getElementById('quick-card-input').value);
+  if (!(val>0)) { toast('Enter an amount','err'); return; }
+  const st = getState();
+  st.transactions.push({
+    id: 't'+Date.now()+'_'+Math.random().toString(36).slice(2),
+    ts: Date.now(),
+    customerId: '__cash__',
+    customerName: 'Card',
+    type: 'pay',
+    method: 'card',
+    amount: val,
+    note: 'Walk-in card'
+  });
+  saveState(st);
+  closeModal('m-quick-card');
+  renderCustomerList();
+  toast('+'+f(val)+' \u20ac card added','ok');
+}
+
+// ═══════════════════════════════════════════
+// MODAL: Add Customer
+// ═══════════════════════════════════════════
+function openAddCustomer() {
+  document.getElementById('new-cust-input').value='';
+  openModal('m-add-cust');
+  setTimeout(()=>document.getElementById('new-cust-input').focus(),200);
+}
+let _pendingAddName = null;
+let _pendingOldId   = null;
+
+function doAddCustomer() {
+  const name = document.getElementById('new-cust-input').value.trim();
+  if (!name) { toast('Enter a name','err'); return; }
+  const st = getState();
+
+  // Already active customer with same name?
+  if (st.customers.find(c=>c.name.toLowerCase()===name.toLowerCase())) {
+    toast('Name already exists','err'); return;
+  }
+
+  // Check history for same name — skip special internal IDs
+  const INTERNAL = ['__cash__','__settled__'];
+  const oldTx = st.transactions.find(t=>
+    !INTERNAL.includes(t.customerId) &&
+    t.customerName.toLowerCase()===name.toLowerCase()
+  );
+
+  if (oldTx) {
+    _pendingAddName = name;
+    _pendingOldId   = oldTx.customerId;
+    closeModal('m-add-cust');
+    document.getElementById('merge-title').textContent = name;
+    document.getElementById('merge-body').textContent = name + ' has past history. Same customer or new?';
+    openModal('m-merge-cust');
+  } else {
+    _addCustomerFinal(name, 'c'+Date.now());
+  }
+}
+
+function doMergeCustomer(merge) {
+  closeModal('m-merge-cust');
+  if (!_pendingAddName) return;
+  const name = _pendingAddName;
+  _pendingAddName = null;
+
+  if (merge) {
+    const st = getState();
+    const oldId = _pendingOldId;
+    _pendingOldId = null;
+    const balance = st.transactions
+      .filter(t=>t.customerId===oldId)
+      .reduce((sum,t)=>t.type==='debt'?sum-t.amount:sum+t.amount, 0);
+    st.customers.push({id:oldId, name, balance});
+    saveState(st); renderCustomerList();
+    toast('Added: '+name+' (history restored)','ok');
+  } else {
+    _pendingOldId = null;
+    _addCustomerFinal(name, 'c'+Date.now());
+  }
+}
+
+function _addCustomerFinal(name, id) {
+  const st = getState();
+  st.customers.push({id, name, balance:0});
+  saveState(st); closeModal('m-add-cust'); renderCustomerList();
+  toast('Added: '+name,'ok');
+}
+document.getElementById('new-cust-input').addEventListener('keydown',e=>{ if(e.key==='Enter') doAddCustomer(); });
+
+// ═══════════════════════════════════════════
+// MODAL: Add Cash
+// ═══════════════════════════════════════════
+let cashCustomerId = null;
+function openAddCashModal(id) {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===id);
+  if (!c) return;
+  cashCustomerId = id;
+  document.getElementById('cash-cust-name').textContent = c.name;
+  document.getElementById('cash-amount-input').value = '';
+  document.getElementById('cash-quick-btns').innerHTML = st.quickAmounts.filter(a=>a>0).sort((a,b)=>a-b)
+    .map(a=>`<button class="quick-btn" onclick="var el=document.getElementById('cash-amount-input');el.value=f((parseAmount(el.value)||0)+${a})">${f(a)} \u20ac</button>`).join('');
+  openModal('m-add-cash');
+  setTimeout(()=>document.getElementById('cash-amount-input').focus(),200);
+}
+function doAddCash() {
+  const val = parseAmount(document.getElementById('cash-amount-input').value);
+  if (!(val>0)) { toast('Enter an amount','err'); return; }
+  const st = getState();
+  const c = st.customers.find(x=>x.id===cashCustomerId);
+  if (!c) return;
+  c.balance += val;
+  st.transactions.push({id:'t'+Date.now()+'_'+Math.random().toString(36).slice(2),ts:Date.now(),customerId:c.id,customerName:c.name,type:'credit',amount:val,note:''});
+  saveState(st); closeModal('m-add-cash'); renderCustomerList();
+  toast(c.name+': +'+f(val)+' \u20ac cash','ok');
+}
+
+// ═══════════════════════════════════════════
+// SCREEN: CHARGE
+// ═══════════════════════════════════════════
+let activeCustomerId = null;
+let _chargeShowingHistory = false;
+let chargeMode = 'debt';
+
+function openCharge(id) {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===id);
+  if (!c) return;
+  activeCustomerId = id;
+  document.getElementById('charge-name').textContent = c.name;
+
+  // Show oldest unpaid debt date - only debts after the last payment
+  const debtDateEl = document.getElementById('charge-debt-date');
+  const todayStart = todayDayStart();
+  if (c.balance < 0) {
+    const txs = st.transactions.filter(t => t.customerId === id).sort((a,b) => a.ts - b.ts);
+    // Find last payment/settlement timestamp
+    let lastPaidTs = 0;
+    txs.forEach(t => { if (t.type === 'pay') lastPaidTs = t.ts; });
+    // Find oldest debt after last payment and before today
+    const debtTxs = txs.filter(t => t.type === 'debt' && t.ts > lastPaidTs && t.ts < todayStart);
+    if (debtTxs.length) {
+      const oldest = new Date(debtTxs[0].ts);
+      const pad = n => n.toString().padStart(2,'0');
+      debtDateEl.textContent = 'Tab since ' + pad(oldest.getDate())+'.'+pad(oldest.getMonth()+1)+'.'+oldest.getFullYear();
+    } else {
+      debtDateEl.textContent = '';
+    }
+  } else {
+    debtDateEl.textContent = '';
+  }
+  document.getElementById('amount-input').value = '';
+  document.getElementById('note-input').value = '';
+  setMode('debt');
+  renderQuickBtns();
+  renderCustHist();
+  switchChargeTab('charge');
+  show('s-charge');
+}
+
+function setMode(mode) {
+  chargeMode = mode;
+  ['debt','pay','credit'].forEach(m => {
+    document.getElementById('mode-'+m).className = 'mode-btn'+(mode===m?' active-'+m:'');
+  });
+  const cBtn = document.getElementById('confirm-btn');
+  if (mode==='debt') {
+    cBtn.className='btn-confirm-charge debt'; cBtn.textContent='Add tab';
+  } else if (mode==='pay') {
+    cBtn.className='btn-confirm-charge pay'; cBtn.textContent='Record payment';
+  } else {
+    cBtn.className='btn-confirm-charge cash'; cBtn.textContent='Add credit';
+  }
+  updateConfirmBtn();
+}
+
+function renderQuickBtns() {
+  const st = getState();
+  document.getElementById('quick-btns').innerHTML = st.quickAmounts.filter(a=>a>0).sort((a,b)=>a-b)
+    .map(a=>`<button class="quick-btn" onclick="setAmount(${a})">${f(a)} \u20ac</button>`).join('');
+}
+function setAmount(a) { const cur = parseAmount(document.getElementById('amount-input').value)||0; document.getElementById('amount-input').value=f(cur+a); updateConfirmBtn(); }
+function updateConfirmBtn() {
+  const val = parseAmount(document.getElementById('amount-input').value);
+  document.getElementById('confirm-btn').disabled = !(val>0);
+}
+
+function switchChargeTab(tab) {
+  _chargeShowingHistory = (tab === 'history');
+  const histBtn = document.getElementById('tab-history');
+  document.getElementById('charge-panel').style.display = tab==='charge' ? '' : 'none';
+  document.getElementById('history-panel').style.display = tab==='history' ? '' : 'none';
+  document.getElementById('confirm-btn').style.display = tab==='charge' ? '' : 'none';
+  if (tab==='history') {
+    histBtn.className = 'charge-tab active';
+    histBtn.innerHTML = '\u2190 Back to charge';
+    renderCustHist();
+  } else {
+    histBtn.className = 'charge-tab';
+    const st = getState();
+    const ds = todayDayStart(), de = ds + 86400000;
+    const n = st.transactions.filter(t => t.customerId===activeCustomerId && t.ts>=ds && t.ts<de).length;
+    histBtn.innerHTML = 'History <span id="hist-count">'+(n?'('+n+')':'')+'</span>';
+  }
+}
+
+function toggleChargeHistory() {
+  switchChargeTab(_chargeShowingHistory ? 'charge' : 'history');
+}
+
+function renderCustHist() {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  const balEl = document.getElementById('cust-hist-bal');
+  if (c) { balEl.className='cust-hist-bal '+balClass(c.balance); balEl.textContent=balText(c.balance); }
+  const ds = todayDayStart(), de = ds + 86400000;
+  const txs = st.transactions
+    .filter(t => t.customerId===activeCustomerId && t.ts>=ds && t.ts<de)
+    .sort((a,b) => b.ts-a.ts);
+  // Update count badge on tab
+  const countEl = document.getElementById('hist-count');
+  if (countEl) countEl.textContent = txs.length ? '('+txs.length+')' : '';
+  const el = document.getElementById('cust-hist-list');
+  if (!txs.length) { el.innerHTML='<div class="cust-hist-empty">No transactions today.</div>'; return; }
+  el.innerHTML = txs.map(t => {
+    const sign = t.type==='debt'?'\u2212':'+';
+    const cls  = txClass(t);
+    const lbl  = txLabel(t);
+    return `<div class="cust-hist-item">
+      <div class="cust-hist-left">
+        <div class="cust-hist-type">${lbl}${t.note?' \u2014 '+esc(t.note):''}</div>
+        <div class="cust-hist-time">${formatTime(t.ts)}</div>
+      </div>
+      <div class="cust-hist-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+    </div>`;
+  }).join('');
+}
+
+function doCharge() {
+  const val = parseAmount(document.getElementById('amount-input').value);
+  if (!(val>0)) { toast('Enter an amount','err'); return; }
+  const note = document.getElementById('note-input').value.trim();
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  if (!c) return;
+  if (chargeMode==='debt') c.balance -= val;
+  else c.balance += val;
+  st.transactions.push({id:'t'+Date.now()+'_'+Math.random().toString(36).slice(2),ts:Date.now(),customerId:c.id,customerName:c.name,type:chargeMode,amount:val,note});
+  saveState(st);
+  const confirmedMode = chargeMode;
+  document.getElementById('amount-input').value='';
+  document.getElementById('note-input').value='';
+  updateConfirmBtn();
+  const sign = confirmedMode==='debt'?'\u2212':'+';
+  toast(c.name+': '+sign+f(val)+' \u20ac', confirmedMode==='debt'?'err':'ok');
+  goHome();
+}
+
+// ═══════════════════════════════════════════
+// BILL SETTLED
+// ═══════════════════════════════════════════
+function askBillSettled(id) {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===(id||activeCustomerId));
+  if (!c) return;
+  activeCustomerId = c.id;
+  document.getElementById('settled-cust-text').textContent = c.name;
+  const owed = c.balance < 0 ? Math.abs(c.balance) : 0;
+  const amtEl = document.getElementById('settled-amount-text');
+  if (amtEl) amtEl.textContent = owed > 0 ? f(owed) + ' \u20ac' : '';
+  openModal('m-bill-settled');
+}
+
+// Settle full balance via one method (cash or card)
+function settlePayment(method) {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  if (!c) { closeModal('m-bill-settled'); return; }
+  const owed = c.balance < 0 ? Math.abs(c.balance) : 0;
+
+  if (owed > 0) {
+    st.transactions.push({
+      id: 't'+Date.now()+'_'+Math.random().toString(36).slice(2),
+      ts: Date.now(),
+      customerId: c.id,
+      customerName: c.name,
+      type: 'pay',
+      method: method,
+      amount: owed,
+      note: 'Bill settled'
+    });
+  }
+
+  finishSettle(st, c);
+  closeModal('m-bill-settled');
+  toast(c.name+' \u2014 settled ('+(method==='card'?'card':'cash')+')','ok');
+}
+
+// Shared: after recording payment(s), reset table or remove customer
+function finishSettle(st, c) {
+  if (c.permanent) {
+    // Permanent table — reset balance to 0, keep it
+    c.balance = 0;
+    saveState(st);
+    openTables();
+  } else {
+    // Regular customer — remove, keep history
+    st.customers = st.customers.filter(x=>x.id!==c.id);
+    saveState(st);
+    goHome();
+  }
+}
+
+function openSplitPayment() {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  if (!c) return;
+  const owed = c.balance < 0 ? Math.abs(c.balance) : 0;
+  document.getElementById('split-cust-text').textContent = c.name;
+  document.getElementById('split-total').textContent = f(owed) + ' \u20ac';
+  document.getElementById('split-cash').value = '';
+  document.getElementById('split-card').value = '';
+  document.getElementById('split-info').textContent = '';
+  document.getElementById('split-confirm-btn').disabled = true;
+  closeModal('m-bill-settled');
+  openModal('m-split');
+}
+
+function updateSplitInfo() {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  const owed = c && c.balance < 0 ? Math.abs(c.balance) : 0;
+  const cash = parseAmount(document.getElementById('split-cash').value) || 0;
+  const card = parseAmount(document.getElementById('split-card').value) || 0;
+  const sum = cash + card;
+  const info = document.getElementById('split-info');
+  const btn = document.getElementById('split-confirm-btn');
+  const remaining = owed - sum;
+  if (sum > owed + 0.001) {
+    info.textContent = 'Too much by ' + f(sum - owed) + ' \u20ac';
+    info.style.color = 'var(--red)';
+    btn.disabled = true;
+  } else if (sum <= 0) {
+    info.textContent = '';
+    btn.disabled = true;
+  } else {
+    info.textContent = remaining > 0.001 ? ('Remaining: ' + f(remaining) + ' \u20ac') : 'Fully covered';
+    info.style.color = remaining > 0.001 ? 'var(--text3)' : 'var(--green)';
+    btn.disabled = false;
+  }
+}
+
+function confirmSplit() {
+  const cash = parseAmount(document.getElementById('split-cash').value) || 0;
+  const card = parseAmount(document.getElementById('split-card').value) || 0;
+  const sum = cash + card;
+  if (sum <= 0) { toast('Enter amounts','err'); return; }
+
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  if (!c) { closeModal('m-split'); return; }
+  const owed = c.balance < 0 ? Math.abs(c.balance) : 0;
+  if (sum > owed + 0.001) { toast('Amount exceeds debt','err'); return; }
+
+  const baseTs = Date.now();
+  if (cash > 0) {
+    st.transactions.push({
+      id: 't'+baseTs+'_'+Math.random().toString(36).slice(2),
+      ts: baseTs,
+      customerId: c.id,
+      customerName: c.name,
+      type: 'pay',
+      method: 'cash',
+      amount: cash,
+      note: 'Split payment'
+    });
+  }
+  if (card > 0) {
+    st.transactions.push({
+      id: 't'+(baseTs+1)+'_'+Math.random().toString(36).slice(2),
+      ts: baseTs+1,
+      customerId: c.id,
+      customerName: c.name,
+      type: 'pay',
+      method: 'card',
+      amount: card,
+      note: 'Split payment'
+    });
+  }
+
+  finishSettle(st, c);
+  closeModal('m-split');
+  toast(c.name+' \u2014 split settled','ok');
+}
+
+function confirmBillSettled() {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  const name = c ? c.name : '';
+  const custId = activeCustomerId;
+
+  if (c && c.balance < 0) {
+    // Customer had debt — record as payment
+    st.transactions.push({
+      id: 't'+Date.now()+'_'+Math.random().toString(36).slice(2),
+      ts: Date.now(),
+      customerId: custId,
+      customerName: c.name,
+      type: 'pay',
+      amount: Math.abs(c.balance),
+      note: 'Bill settled'
+    });
+  }
+
+  // Remove only the customer — keep all transaction history
+  st.customers = st.customers.filter(x=>x.id!==custId);
+  saveState(st);
+
+  closeModal('m-bill-settled');
+  toast(name+' \u2014 all settled!','ok');
+  goHome();
+}
+
+// ═══════════════════════════════════════════
+// DELETE CUSTOMER
+// ═══════════════════════════════════════════
+let pendingDelId = null;
+let _delFromCharge = false;
+
+function askDelCustomer(id) {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===id);
+  if (!c) return;
+  pendingDelId = id;
+  document.getElementById('del-cust-text').textContent = 'Remove '+c.name+'?';
+  openModal('m-del-cust');
+}
+function askDelCurrentCustomer() {
+  if (!activeCustomerId) return;
+  _delFromCharge = true;
+  askDelCustomer(activeCustomerId);
+}
+function confirmDelCustomer() {
+  if (!pendingDelId) return;
+  const st = getState();
+  st.customers = st.customers.filter(c=>c.id!==pendingDelId);
+  saveState(st);
+  closeModal('m-del-cust');
+  pendingDelId = null;
+  if (_delFromCharge) { _delFromCharge=false; toast('Customer removed','info'); goHome(); }
+  else { renderCustManage(); toast('Customer removed','info'); }
+}
+
+// ═══════════════════════════════════════════
+// SCREEN: DAY SUMMARY
+// ═══════════════════════════════════════════
+let currentHistoryTab = 'day';
+
+function openHistory() {
+  currentHistoryTab = 'day';
+  switchHistoryTab('day');
+  show('s-history');
+}
+
+function switchHistoryTab(tab) {
+  currentHistoryTab = tab;
+  ['day','month','raw'].forEach(t => {
+    document.getElementById('htab-'+t).className = 'charge-tab' + (t===tab?' active':'');
+  });
+  // Show/hide panels
+  document.getElementById('summary-totals').style.display = tab==='day' ? '' : 'none';
+  document.getElementById('summary-list').style.display = tab==='day' ? '' : 'none';
+  document.getElementById('hpanel-month').style.display = tab==='month' ? 'flex' : 'none';
+  document.getElementById('hpanel-raw').style.display = tab==='raw' ? '' : 'none';
+  if (tab==='day') renderDaySummary();
+  else if (tab==='month') { if (!reportMonth) { const n=new Date(); reportMonth={year:n.getFullYear(),month:n.getMonth()}; } renderMonthReport(); }
+  else renderRawHistory();
+}
+
+function renderRawHistory() {
+  const st = getState();
+  const el = document.getElementById('hpanel-raw');
+  const txs = [...st.transactions].sort((a,b) => b.ts - a.ts);
+  if (!txs.length) { el.innerHTML='<div class="summary-empty">No transactions yet.</div>'; return; }
+  const pad = n => n.toString().padStart(2,'0');
+  el.innerHTML = txs.map(t => {
+    const d = new Date(t.ts);
+    const date = pad(d.getDate())+'.'+pad(d.getMonth()+1);
+    const time = pad(d.getHours())+':'+pad(d.getMinutes());
+    const isAdj = t.type==='adjustment';
+    const sign = (t.type==='debt'||isAdj) ? '\u2212' : '+';
+    const cls = txClass(t);
+    const lbl = txLabel(t);
+    return `<div class="tx-row" style="${isAdj?'border-left:3px solid var(--red);':''}">
+      <div class="tx-row-left">
+        <div class="tx-row-name">${esc(t.customerName)}</div>
+        <div class="tx-row-note">${lbl}${t.note?' \u2014 '+esc(t.note):''}</div>
+        <div class="tx-row-time">${date} ${time}</div>
+      </div>
+      <div class="tx-row-right">
+        <div class="tx-row-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openDaySummary() { openHistory(); }
+function openMonthReport() { switchHistoryTab('month'); show('s-history'); }
+
+function renderDaySummary() {
+  const st = getState();
+  const ds = todayDayStart(), de = ds+86400000;
+  document.getElementById('htab-day').textContent = 'Today — ' + formatDateRange(ds).split(' ')[0];
+  const tx = st.transactions.filter(t=>t.ts>=ds&&t.ts<de);
+  let grandTab=0, grandIn=0, cashIn=0, cardIn=0;
+  tx.forEach(t=>{
+    if(t.type==='debt') grandTab+=t.amount;
+    else if(t.type==='pay') { grandIn+=t.amount; if(t.method==='card') cardIn+=t.amount; else cashIn+=t.amount; }
+    else if(t.type==='adjustment') { grandIn-=t.amount; cashIn-=t.amount; }
+  });
+  document.getElementById('summary-totals').innerHTML =
+    `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${grandIn >= 0 ? 'green' : 'red'}">${grandIn < 0 ? '\u2212' : '+'}${f(Math.abs(grandIn))} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val green">${f(cashIn)} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(cardIn)} \u20ac</div></div>`;
+  if (!tx.length) { document.getElementById('summary-list').innerHTML='<div class="summary-empty">No transactions today.</div>'; return; }
+  const by={};
+  tx.forEach(t=>{ if(!by[t.customerId]) by[t.customerId]={id:t.customerId,name:t.customerName,tab:0,paid:0,credit:0,count:0}; if(t.type==='debt') by[t.customerId].tab+=t.amount; else if(t.type==='pay') by[t.customerId].paid+=t.amount; else if(t.type==='credit') by[t.customerId].credit+=t.amount; by[t.customerId].count++; });
+  document.getElementById('summary-list').innerHTML = Object.values(by)
+    .filter(r => r.tab > 0 || r.paid > 0 || r.credit > 0)
+    .sort((a,b) => (b.tab-b.paid) - (a.tab-a.paid))
+    .map(r => {
+    const unpaid = r.tab - r.paid;
+    let amtHtml;
+    if (r.tab === 0 && r.paid === 0 && r.credit > 0) {
+      // Credit only
+      amtHtml = `<div style="color:var(--gold2);font-size:1.07em;font-weight:700;">+${f(r.credit)} \u20ac credit</div>`;
+    } else if (unpaid <= 0) {
+      // Fully paid
+      amtHtml = `<div class="summary-row-paid">+${f(r.paid)} \u20ac</div>`;
+      if (r.credit > 0) amtHtml += `<div style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>`;
+    } else if (r.paid === 0) {
+      // Nothing paid
+      amtHtml = `<div class="summary-row-tab">\u2212${f(r.tab)} \u20ac</div>`;
+      if (r.credit > 0) amtHtml += `<div style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>`;
+    } else {
+      // Partially paid
+      amtHtml = `<div class="summary-row-tab">\u2212${f(unpaid)} \u20ac</div><div class="summary-row-paid">+${f(r.paid)} \u20ac in</div>`;
+      if (r.credit > 0) amtHtml += `<div style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>`;
+    }
+    return `<button class="summary-row" onclick="openTxDetail('day','${r.id}','${esc(r.name)}')">
+      <div class="summary-row-left"><div class="summary-row-name">${esc(r.name)}</div><div class="summary-row-detail">${r.count} transaction${r.count!==1?'s':''} \u2014 tap to edit</div></div>
+      <div class="summary-row-right">${amtHtml}</div>
+    </button>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// SCREEN: SETTINGS
+// ═══════════════════════════════════════════
+let editingQuickAmounts = [];
+function applyFontSize(size) {
+  // Preview only — does NOT save. Saved on Save & close.
+  document.documentElement.style.fontSize = size + 'px';
+  const label = document.getElementById('font-size-label');
+  const slider = document.getElementById('font-size-slider');
+  if (label) label.textContent = size + 'px';
+  if (slider) slider.value = size;
+}
+
+function loadFontSize() {
+  try {
+    const saved = localStorage.getItem('se7en_fontsize');
+    if (saved) applyFontSize(parseInt(saved));
+    else applyFontSize(14);
+  } catch(e) { applyFontSize(14); }
+}
+
+function initFontSizeSlider() {
+  try {
+    const saved = parseInt(localStorage.getItem('se7en_fontsize')) || 14;
+    const slider = document.getElementById('font-size-slider');
+    const label = document.getElementById('font-size-label');
+    if (slider) slider.value = saved;
+    if (label) label.textContent = saved + 'px';
+  } catch(e) {}
+}
+
+function switchSettingsTab(tab) {
+  ['amounts','customers','cash','backup','update'].forEach(t => {
+    document.getElementById('stab-'+t).className = 'charge-tab' + (t===tab?' active':'');
+    document.getElementById('spanel-'+t).style.display = t===tab ? '' : 'none';
+  });
+  if (tab === 'cash') initCashAdj();
+  if (tab === 'backup') initPurgeSelectors();
+  if (tab === 'amounts') initFontSizeSlider();
+  if (tab === 'update') initUpdateTab();
+}
+
+function initUpdateTab() {
+  updateOnlineStatus();
+  document.getElementById('update-status').textContent = '';
+}
+
+function updateOnlineStatus() {
+  const online = navigator.onLine;
+  const dot = document.getElementById('online-dot');
+  const txt = document.getElementById('online-text');
+  if (!dot || !txt) return;
+  if (online) {
+    dot.style.background = 'var(--green)';
+    txt.textContent = 'Online';
+    txt.style.color = 'var(--green)';
+  } else {
+    dot.style.background = 'var(--text4)';
+    txt.textContent = 'Offline';
+    txt.style.color = 'var(--text3)';
+  }
+}
+
+function checkForUpdate() {
+  const statusEl = document.getElementById('update-status');
+  if (!navigator.onLine) {
+    statusEl.textContent = 'You are offline. Connect to the internet first.';
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+  statusEl.textContent = 'Checking for updates...';
+  statusEl.style.color = 'var(--text3)';
+
+  // Tell the service worker to update, clear caches, then reload
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(function(reg) {
+      if (reg) {
+        reg.update().then(function() {
+          // Clear all caches so fresh files load
+          if ('caches' in window) {
+            caches.keys().then(function(keys) {
+              return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+            }).then(function() {
+              statusEl.textContent = 'Updating... reloading now.';
+              statusEl.style.color = 'var(--green)';
+              setTimeout(function(){ location.reload(true); }, 800);
+            });
+          } else {
+            setTimeout(function(){ location.reload(true); }, 500);
+          }
+        }).catch(function() {
+          statusEl.textContent = 'Could not check. Try again.';
+          statusEl.style.color = 'var(--red)';
+        });
+      } else {
+        // No service worker — just hard reload
+        statusEl.textContent = 'Reloading...';
+        setTimeout(function(){ location.reload(true); }, 500);
+      }
+    });
+  } else {
+    setTimeout(function(){ location.reload(true); }, 500);
+  }
+}
+
+// Keep online status live
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+function openSettings() {
+  const st = getState();
+  editingQuickAmounts = [...st.quickAmounts];
+  renderQuickSettings();
+  renderCustManage();
+  switchSettingsTab('amounts');
+  show('s-settings');
+}
+function renderQuickSettings() {
+  document.getElementById('quick-settings-list').innerHTML = editingQuickAmounts.map((a,i)=>
+    `<div class="quick-row">
+       <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" value="${a}" placeholder="Amount" onchange="editingQuickAmounts[${i}]=parseAmount(this.value)||0" onfocus="setTimeout(()=>this.scrollIntoView({block:'center',behavior:'smooth'}),300)">
+       <button class="btn-rm" onclick="removeQuickSlot(${i})">&#x2715;</button>
+     </div>`).join('');
+}
+function addQuickSlot() {
+  editingQuickAmounts.push('');
+  renderQuickSettings();
+  const inputs=document.querySelectorAll('#quick-settings-list input');
+  if(inputs.length) {
+    const last = inputs[inputs.length-1];
+    last.focus();
+    setTimeout(()=>last.scrollIntoView({block:'center',behavior:'smooth'}),300);
+  }
+}
+function removeQuickSlot(i) { editingQuickAmounts.splice(i,1); renderQuickSettings(); }
+function renderCustManage() {
+  const st = getState(); const el=document.getElementById('cust-manage-list');
+  if (!st.customers.length) { el.innerHTML='<div style="color:var(--text4);font-size:1em;text-align:center;padding:10px;">No customers.</div>'; return; }
+  el.innerHTML = st.customers.sort((a,b)=>a.name.localeCompare(b.name)).map(c=>
+    `<div class="cust-manage-row">
+       <div style="flex:1;min-width:0;">
+         <button class="cust-manage-name" onclick="openRenameCustomer('${c.id}')" style="background:none;border:none;text-align:left;display:block;width:100%;">${esc(c.name)} <span style="color:var(--text4);font-size:0.75em;">✎</span></button>
+         <div class="cust-manage-bal ${balClass(c.balance)}">${balText(c.balance)}</div>
+       </div>
+       <div style="display:flex;gap:6px;flex-shrink:0;">
+         <button class="btn-icon" style="font-size:0.85em;padding:6px 10px;" onclick="openCustHistory('${c.id}')">History</button>
+         <button class="btn-del-cust" onclick="askDelCustomer('${c.id}')">Remove</button>
+       </div>
+     </div>`).join('');
+}
+let _renameCustId = null;
+
+function openRenameCustomer(id) {
+  const st = getState();
+  const c = st.customers.find(x => x.id === id);
+  if (!c) return;
+  _renameCustId = id;
+  document.getElementById('rename-cust-input').value = c.name;
+  openModal('m-rename-cust');
+  setTimeout(() => document.getElementById('rename-cust-input').select(), 200);
+}
+
+function confirmRenameCust() {
+  const name = document.getElementById('rename-cust-input').value.trim();
+  if (!name) { toast('Enter a name', 'err'); return; }
+  const st = getState();
+  if (st.customers.find(c => c.id !== _renameCustId && c.name.toLowerCase() === name.toLowerCase())) {
+    toast('Name already exists', 'err'); return;
+  }
+  const c = st.customers.find(x => x.id === _renameCustId);
+  if (!c) return;
+  const oldName = c.name;
+  c.name = name;
+  // Update name in all transactions
+  st.transactions.forEach(t => { if (t.customerId === _renameCustId) t.customerName = name; });
+  saveState(st);
+  closeModal('m-rename-cust');
+  renderCustManage();
+  renderCustomerList();
+  toast(oldName + ' → ' + name, 'ok');
+}
+
+function openCustHistory(id) {
+  const st = getState();
+  const c = st.customers.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('cust-hist-modal-title').textContent = c.name;
+  const txs = st.transactions.filter(t => t.customerId === id).sort((a,b) => b.ts - a.ts);
+  const el = document.getElementById('cust-hist-modal-list');
+  if (!txs.length) { el.innerHTML='<div style="text-align:center;color:var(--text4);padding:20px;">No transactions.</div>'; openModal('m-cust-history'); return; }
+  const pad = n => n.toString().padStart(2,'0');
+  el.innerHTML = txs.map(t => {
+    const d = new Date(t.ts);
+    const date = pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();
+    const time = pad(d.getHours())+':'+pad(d.getMinutes());
+    const isAdj = t.type==='adjustment';
+    const sign = (t.type==='debt'||isAdj)?'\u2212':'+';
+    const cls  = txClass(t);
+    const lbl  = txLabel(t);
+    return `<div class="tx-row">
+      <div class="tx-row-left">
+        <div class="tx-row-note">${lbl}${t.note?' \u2014 '+esc(t.note):''}</div>
+        <div class="tx-row-time">${date} ${time}</div>
+      </div>
+      <div class="tx-row-right">
+        <div class="tx-row-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+      </div>
+    </div>`;
+  }).join('');
+  openModal('m-cust-history');
+}
+
+function saveSettingsAndGoHome() {
+  const st=getState(); st.quickAmounts=editingQuickAmounts.filter(a=>a>0); if(!st.quickAmounts.length) st.quickAmounts=[2,3,3.5,5,10]; saveState(st);
+  // Save the previewed font size now
+  const slider = document.getElementById('font-size-slider');
+  if (slider) { try { localStorage.setItem('se7en_fontsize', parseInt(slider.value)); } catch(e) {} }
+  toast('Saved','ok'); goHome();
+}
+
+function cancelSettingsAndGoHome() {
+  // Discard font-size preview — restore the saved size
+  loadFontSize();
+  goHome();
+}
+
+function showConfirm(title, body, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-body').textContent = body;
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.onclick = function() { closeModal('m-confirm'); onOk(); };
+  openModal('m-confirm');
+}
+
+function purgeOlderThan(months) {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - months);
+  cutoff.setHours(0, 0, 0, 0);
+  const cutoffTs = cutoff.getTime();
+  showConfirm(
+    'Purge old data?',
+    'Delete all transactions before ' + cutoff.getDate() + '.' + (cutoff.getMonth()+1) + '.' + cutoff.getFullYear() + '?',
+    function() {
+      const st = getState();
+      const before = st.transactions.length;
+      st.transactions = st.transactions.filter(t => t.ts >= cutoffTs);
+      const removed = before - st.transactions.length;
+      saveState(st);
+      toast(removed + ' transactions deleted', 'info');
+    }
+  );
+}
+
+function initPurgeSelectors() {
+  const st = getState();
+  const yearEl = document.getElementById('purge-year');
+  if (!yearEl) return;
+  // Find earliest transaction year
+  const now = new Date();
+  let minYear = now.getFullYear() - 1;
+  if (st.transactions.length) {
+    minYear = Math.min(...st.transactions.map(t => new Date(t.ts).getFullYear()));
+  }
+  yearEl.innerHTML = '';
+  for (let y = now.getFullYear(); y >= minYear; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearEl.appendChild(opt);
+  }
+  // Default to current month/year
+  document.getElementById('purge-month').value = now.getMonth() + 1;
+  yearEl.value = now.getFullYear();
+}
+
+function purgeBeforeSelected() {
+  const month = parseInt(document.getElementById('purge-month').value);
+  const year  = parseInt(document.getElementById('purge-year').value);
+  // Cutoff = start of selected month
+  const cutoff = new Date(year, month - 1, 1, 0, 0, 0, 0);
+  const cutoffTs = cutoff.getTime();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  showConfirm(
+    'Purge old data?',
+    'Delete all transactions before ' + monthNames[month-1] + ' ' + year + '?',
+    function() {
+      const st = getState();
+      const before = st.transactions.length;
+      st.transactions = st.transactions.filter(t => t.ts >= cutoffTs);
+      const removed = before - st.transactions.length;
+      saveState(st);
+      toast(removed + ' transaction' + (removed!==1?'s':'') + ' deleted', 'info');
+    }
+  );
+}
+
+function clearHistory() {
+  showConfirm('Clear all data?', 'This will remove all customers, balances and history.', function() {
+    const st = getState();
+    st.transactions = [];
+    st.customers = [];
+    saveState(st);
+    goHome();
+    toast('All data cleared', 'info');
+  });
+}
+
+function resetAll() {
+  showConfirm('Reset everything?', 'All data including settings will be permanently deleted.', function() {
+    localStorage.removeItem(STORAGE_KEY);
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    toast('All data reset', 'info');
+    goHome();
+  });
+}
+
+function doBackup() {
+  const st = getState();
+  const json = JSON.stringify(st, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date();
+  const pad = n => n.toString().padStart(2,'0');
+  a.download = 'se7en-backup-' + date.getFullYear() + pad(date.getMonth()+1) + pad(date.getDate()) + '.json';
+  a.href = url;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup saved', 'ok');
+}
+
+function doRestore(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const st = JSON.parse(e.target.result);
+      if (!st.customers || !st.transactions) { toast('Invalid backup file', 'err'); return; }
+      saveState(st);
+      renderCustManage();
+      renderQuickSettings();
+      toast('Backup restored', 'ok');
+    } catch(err) {
+      toast('Could not read file', 'err');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════
+// SCREEN: OWED LIST
+// ═══════════════════════════════════════════
+function openOwedList() {
+  const st = getState();
+  const debtors = st.customers.filter(c => c.balance < 0).sort((a,b) => a.balance - b.balance);
+  const total = debtors.reduce((s,c) => s + Math.abs(c.balance), 0);
+  document.getElementById('owed-subtitle').textContent = debtors.length + ' customer' + (debtors.length!==1?'s':'') + ' \u2014 ' + f(total) + ' \u20ac total';
+  const el = document.getElementById('owed-list');
+  if (!debtors.length) {
+    el.innerHTML = '<div class="summary-empty">No open tabs.</div>';
+  } else {
+    el.innerHTML = debtors.map(c =>
+      `<button class="summary-row" onclick="openCharge('${c.id}')">
+        <div class="summary-row-left"><div class="summary-row-name">${esc(c.name)}</div></div>
+        <div class="summary-row-tab">\u2212${f(Math.abs(c.balance))} \u20ac</div>
+      </button>`).join('');
+  }
+  show('s-owed');
+}
+
+// ═══════════════════════════════════════════
+// SCREEN: MONTH REPORT
+// ═══════════════════════════════════════════
+let reportMonth = null; // { year, month } 0-indexed
+
+function changeMonth(dir) {
+  reportMonth.month += dir;
+  if (reportMonth.month > 11) { reportMonth.month = 0; reportMonth.year++; }
+  if (reportMonth.month < 0)  { reportMonth.month = 11; reportMonth.year--; }
+  renderMonthReport();
+}
+
+function renderMonthReport() {
+  const { year, month } = reportMonth;
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('htab-month').textContent = monthNames[month].slice(0,3) + ' ' + year;
+  document.getElementById('month-title-display').textContent = monthNames[month] + ' ' + year;
+  document.getElementById('month-subtitle').textContent = '';
+
+  const st = getState();
+
+  // Collect all pub-days that fall within this calendar month
+  // A pub-day starts at 06:00 on day D — we include it if day D is in the target month
+  const dayMap = {}; // key = timestamp of dayStart → { date, tab, paid, dayStart }
+
+  st.transactions.forEach(t => {
+    const ds = getDayStart(t.ts);
+    const d = new Date(ds);
+    if (d.getFullYear() !== year || d.getMonth() !== month) return;
+    const key = ds;
+    if (!dayMap[key]) dayMap[key] = { date: d, tab: 0, paid: 0, cash: 0, card: 0, dayStart: ds };
+    if (t.type === 'debt') dayMap[key].tab += t.amount;
+    else if (t.type === 'pay') { dayMap[key].paid += t.amount; if(t.method==='card') dayMap[key].card += t.amount; else dayMap[key].cash += t.amount; }
+    else if (t.type === 'adjustment') { dayMap[key].paid -= t.amount; dayMap[key].cash -= t.amount; }
+  });
+
+  const days = Object.values(dayMap).sort((a,b) => b.date - a.date);
+
+  let totalTab = 0, totalPaid = 0, totalCash = 0, totalCard = 0;
+  days.forEach(d => { totalTab += d.tab; totalPaid += d.paid; totalCash += d.cash; totalCard += d.card; });
+
+  document.getElementById('month-totals').innerHTML =
+    `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${totalPaid >= 0 ? 'green' : 'red'}">${totalPaid < 0 ? '\u2212' : '+'}${f(Math.abs(totalPaid))} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val green">${f(totalCash)} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(totalCard)} \u20ac</div></div>`;
+
+  document.getElementById('month-subtitle').textContent = days.length + ' day' + (days.length!==1?'s':'') + ' with activity';
+
+  const el = document.getElementById('month-list');
+  if (!days.length) {
+    el.innerHTML = '<div class="month-empty">No transactions this month.</div>';
+    return;
+  }
+  el.innerHTML = days.map(d => {
+    const pad = n => n.toString().padStart(2,'0');
+    const label = pad(d.date.getDate()) + '.' + pad(d.date.getMonth()+1);
+    const net = d.paid; // already accounts for adjustments (subtracted in calculation)
+    const sign = net >= 0 ? '+' : '\u2212';
+    const cls = net >= 0 ? 'month-row-paid' : 'month-row-tab';
+    return `<button class="month-row" onclick="openTxDetail('month',${d.dayStart},'${label}')">
+      <div class="month-row-date">${label}</div>
+      <div class="month-row-right">
+        <div class="${cls}">${sign}${f(Math.abs(net))} \u20ac</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// TRANSACTION DETAIL + DELETE
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// TX DETAIL NAVIGATION
+// ═══════════════════════════════════════════
+let _txDetailPrev = null; // previous level to go back to
+
+function txDetailBack() {
+  if (_txDetailPrev) {
+    const prev = _txDetailPrev;
+    _txDetailPrev = null;
+    prev();
+  } else {
+    _txDetailPrev = null;
+    closeModal('m-tx-detail');
+  }
+}
+
+function openTxDetail(context, key, label) {
+  const st = getState();
+  let txs;
+  if (context === 'day') {
+    const ds = todayDayStart(), de = ds + 86400000;
+    txs = st.transactions.filter(t => t.customerId === key && t.ts >= ds && t.ts < de);
+  } else {
+    const dayStart = Number(key), dayEnd = dayStart + 86400000;
+    txs = st.transactions.filter(t => t.ts >= dayStart && t.ts < dayEnd);
+  }
+
+  document.getElementById('tx-detail-title').textContent = label;
+  const el = document.getElementById('tx-detail-list');
+
+  if (!txs.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text4);padding:20px;">No transactions.</div>';
+    openModal('m-tx-detail');
+    return;
+  }
+
+  if (context === 'month') {
+    const byCustomer = {};
+    txs.forEach(t => {
+      if (!byCustomer[t.customerId]) byCustomer[t.customerId] = { name: t.customerName, tab: 0, paid: 0, credit: 0, adjustment: 0, customerId: t.customerId, ids: [], isCash: t.customerId === '__cash__' || t.customerId === '__settled__' };
+      if (t.type === 'debt') byCustomer[t.customerId].tab += t.amount;
+      else if (t.type === 'pay') byCustomer[t.customerId].paid += t.amount;
+      else if (t.type === 'credit') byCustomer[t.customerId].credit += t.amount;
+      else if (t.type === 'adjustment') byCustomer[t.customerId].adjustment += t.amount;
+      byCustomer[t.customerId].ids.push(t.id);
+    });
+
+    const rows = Object.values(byCustomer).sort((a, b) => {
+      if (a.isCash && !b.isCash) return 1;
+      if (!a.isCash && b.isCash) return -1;
+      return a.name.localeCompare(b.name);
+    });
+
+    el.innerHTML = rows.map(r => {
+      const netOwed = r.tab - r.paid;
+      const creditLine = r.credit > 0 ? `<div class="tx-row-amt" style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>` : '';
+      const adjLine = r.adjustment > 0 ? `<div class="tx-row-amt debt" style="font-size:0.93em;">\u2212${f(r.adjustment)} \u20ac removed</div>` : '';
+      let amtHtml = '';
+      if (r.adjustment > 0 && r.paid === 0 && r.tab === 0) {
+        amtHtml = `<div class="tx-row-amt debt">\u2212${f(r.adjustment)} \u20ac</div>`;
+      } else if (r.paid > 0 && netOwed <= 0) {
+        amtHtml = `<div class="tx-row-amt pay">+${f(r.paid)} \u20ac</div>${adjLine}`;
+      } else if (r.paid > 0 && netOwed > 0) {
+        amtHtml = `<div class="tx-row-amt pay">+${f(r.paid)} \u20ac</div><div class="tx-row-amt debt" style="font-size:0.93em;">\u2212${f(netOwed)} \u20ac open</div>${adjLine}`;
+      } else if (r.tab > 0) {
+        amtHtml = `<div class="tx-row-amt debt">\u2212${f(r.tab)} \u20ac</div>${adjLine}`;
+      }
+      return `<button class="tx-row" style="width:100%;text-align:left;" onclick="openCustomerDayDetail('${r.customerId}','${esc(r.name)}',${Number(key)})">
+        <div class="tx-row-left">
+          <div class="tx-row-name">${esc(r.name)}</div>
+        </div>
+        <div class="tx-row-right" style="flex-direction:column;align-items:flex-end;">
+          ${amtHtml}
+          ${creditLine}
+        </div>
+      </button>`;
+    }).join('');
+  } else {
+    // Day detail — show individual transactions
+    txs = txs.sort((a,b) => b.ts - a.ts);
+    const pad = n => n.toString().padStart(2,'0');
+    el.innerHTML = txs.map(t => {
+      const isAdj = t.type === 'adjustment';
+      const sign = (t.type==='debt' || isAdj) ? '\u2212' : '+';
+      const cls  = txClass(t);
+      const lbl  = txLabel(t);
+      const d    = new Date(t.ts);
+      const time = pad(d.getHours())+':'+pad(d.getMinutes());
+      const adjStyle = isAdj ? 'background:var(--rbg);border-radius:6px;margin:-2px;padding:2px 4px;' : '';
+      return `<div class="tx-row" style="${isAdj?'border-left:3px solid var(--red);':''}">
+        <div class="tx-row-left">
+          <div class="tx-row-name" style="${isAdj?'color:var(--red);':''}">${esc(t.customerName)}</div>
+          <div class="tx-row-note">${lbl}${t.note?' \u2014 '+esc(t.note):''}</div>
+          <div class="tx-row-time">${time}</div>
+        </div>
+        <div class="tx-row-right">
+          <div class="tx-row-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+          <button class="btn-tx-edit" onclick="editTx('${t.id}')">Edit</button>
+          <button class="btn-tx-del" onclick="deleteTx('${t.id}','${context}',${context==='month'?key:0})">Del</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  openModal('m-tx-detail');
+}
+
+// ═══════════════════════════════════════════
+// EDIT TRANSACTION
+// ═══════════════════════════════════════════
+let _editTxId = null;
+
+function editTx(txId) {
+  const st = getState();
+  const tx = st.transactions.find(t => t.id === txId);
+  if (!tx) return;
+  _editTxId = txId;
+  const lbl = txLabel(tx);
+  document.getElementById('edit-tx-label').textContent = tx.customerName + ' — ' + lbl;
+  document.getElementById('edit-tx-input').value = f(tx.amount);
+  openModal('m-edit-tx');
+  setTimeout(() => document.getElementById('edit-tx-input').select(), 200);
+}
+
+function confirmEditTx() {
+  const val = parseAmount(document.getElementById('edit-tx-input').value);
+  if (!(val > 0)) { toast('Enter an amount', 'err'); return; }
+  const st = getState();
+  const tx = st.transactions.find(t => t.id === _editTxId);
+  if (!tx) return;
+
+  // Adjust customer balance for the difference
+  const diff = val - tx.amount;
+  const c = st.customers.find(x => x.id === tx.customerId);
+  if (c) {
+    if (tx.type === 'debt') c.balance -= diff;
+    else c.balance += diff;
+  }
+
+  tx.amount = val;
+  saveState(st);
+  closeModal('m-edit-tx');
+  _editTxId = null;
+  toast('Amount updated', 'ok');
+
+  // Refresh the detail view
+  const titleEl = document.getElementById('tx-detail-title');
+  if (titleEl && titleEl.textContent) {
+    // Re-render by calling back through prev or re-opening
+    if (_txDetailPrev) {
+      const prev = _txDetailPrev;
+      _txDetailPrev = null;
+      prev();
+    }
+  }
+  renderCustomerList();
+}
+
+function deleteTx(txId, context, dayKey) {
+  const st = getState();
+  const tx = st.transactions.find(t => t.id === txId);
+  if (!tx) return;
+
+  // Reverse effect on customer balance if customer still exists
+  if (tx.type === 'debt') {
+    const c = st.customers.find(x => x.id === tx.customerId);
+    if (c) c.balance += tx.amount; // undo debit
+  } else {
+    const c = st.customers.find(x => x.id === tx.customerId);
+    if (c) c.balance -= tx.amount; // undo credit
+  }
+
+  st.transactions = st.transactions.filter(t => t.id !== txId);
+  saveState(st);
+  toast('Transaction deleted','info');
+
+  // Refresh the detail modal with remaining transactions
+  if (context === 'day') {
+    const ds = todayDayStart(), de = ds + 86400000;
+    const remaining = st.transactions.filter(t => t.customerId === tx.customerId && t.ts >= ds && t.ts < de);
+    if (!remaining.length) { closeModal('m-tx-detail'); renderDaySummary(); return; }
+    openTxDetail('day', tx.customerId, document.getElementById('tx-detail-title').textContent);
+    renderDaySummary();
+  } else {
+    const dayStart = Number(dayKey), dayEnd = dayStart + 86400000;
+    const remaining = st.transactions.filter(t => t.ts >= dayStart && t.ts < dayEnd);
+    if (!remaining.length) { closeModal('m-tx-detail'); renderMonthReport(); return; }
+    openTxDetail('month', dayKey, document.getElementById('tx-detail-title').textContent);
+    renderMonthReport();
+  }
+  renderCustomerList();
+}
+
+// ═══════════════════════════════════════════
+// CASH ADJUSTMENT
+// ═══════════════════════════════════════════
+let cashAdjType = 'add';
+
+function initCashAdj() {
+  // Set date to today
+  const today = new Date();
+  const pad = n => n.toString().padStart(2,'0');
+  document.getElementById('cadj-date').value = today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+  document.getElementById('cadj-amount').value = '';
+  document.getElementById('cadj-note').value = '';
+  setCashAdjType('add');
+  renderCadjHistory();
+}
+
+function setCashAdjType(type) {
+  cashAdjType = type;
+  document.getElementById('cadj-add').className = 'mode-btn' + (type==='add' ? ' active-pay' : '');
+  document.getElementById('cadj-remove').className = 'mode-btn' + (type==='remove' ? ' active-debt' : '');
+  const btn = document.getElementById('cadj-btn');
+  btn.className = 'btn-confirm-charge ' + (type==='add' ? 'pay' : 'debt');
+  btn.textContent = type==='add' ? 'Add cash' : 'Remove cash';
+  updateCadjBtn();
+}
+
+function updateCadjBtn() {
+  const val = parseAmount(document.getElementById('cadj-amount').value);
+  document.getElementById('cadj-btn').disabled = !(val > 0);
+}
+
+function doCashAdj() {
+  const val = parseAmount(document.getElementById('cadj-amount').value);
+  if (!(val > 0)) return;
+  const note = document.getElementById('cadj-note').value.trim();
+  const dateStr = document.getElementById('cadj-date').value;
+  if (!dateStr) { toast('Select a date', 'err'); return; }
+
+  // Build timestamp: use selected date at 12:00 so it falls within the pub-day
+  const [yr, mo, dy] = dateStr.split('-').map(Number);
+  const ts = new Date(yr, mo-1, dy, 12, 0, 0).getTime();
+
+  const st = getState();
+  st.transactions.push({
+    id: 't'+Date.now()+'_'+Math.random().toString(36).slice(2),
+    ts,
+    customerId: '__cash__',
+    customerName: 'Cash adjustment',
+    type: cashAdjType === 'add' ? 'pay' : 'adjustment',
+    amount: val,
+    note: note || (cashAdjType==='add' ? 'Cash added' : 'Cash removed')
+  });
+  saveState(st);
+  document.getElementById('cadj-amount').value = '';
+  document.getElementById('cadj-note').value = '';
+  updateCadjBtn();
+  renderCadjHistory();
+  toast((cashAdjType==='add'?'+':'\u2212')+f(val)+' \u20ac adjustment saved', cashAdjType==='add'?'ok':'info');
+}
+
+function renderCadjHistory() {
+  const st = getState();
+  const el = document.getElementById('cadj-history');
+  const adjs = st.transactions
+    .filter(t => t.customerId === '__cash__' || t.type === 'adjustment')
+    .sort((a,b) => b.ts - a.ts)
+    .slice(0, 10);
+  if (!adjs.length) { el.innerHTML = '<div style="color:var(--text4);font-size:0.93em;text-align:center;padding:10px;">No adjustments yet.</div>'; return; }
+  const pad = n => n.toString().padStart(2,'0');
+  el.innerHTML = adjs.map(t => {
+    const d = new Date(t.ts);
+    const date = pad(d.getDate())+'.'+pad(d.getMonth()+1);
+    const isAdd = t.type === 'pay';
+    const sign = isAdd ? '+' : '\u2212';
+    const cls = isAdd ? 'pay' : 'debt';
+    return `<div class="tx-row">
+      <div class="tx-row-left">
+        <div class="tx-row-name" style="font-size:1em;">${esc(t.note)}</div>
+        <div class="tx-row-time">${date}</div>
+      </div>
+      <div class="tx-row-right">
+        <div class="tx-row-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+        <button class="btn-tx-del" onclick="deleteCashAdj('${t.id}')">Del</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteCashAdj(txId) {
+  const st = getState();
+  st.transactions = st.transactions.filter(t => t.id !== txId);
+  saveState(st);
+  renderCadjHistory();
+  toast('Adjustment deleted', 'info');
+}
+
+function openCustomerDayDetail(customerId, name, dayStart) {
+  // Remember to go back to the day view
+  const dayLabel = (function() {
+    const d = new Date(dayStart);
+    const pad = n => n.toString().padStart(2,'0');
+    return pad(d.getDate())+'.'+pad(d.getMonth()+1);
+  })();
+  _txDetailPrev = () => { _txDetailPrev = null; openTxDetail('month', dayStart, dayLabel); };
+  // Show all transactions for this customer on that specific day
+  const st = getState();
+  const dayEnd = dayStart + 86400000;
+  const txs = st.transactions
+    .filter(t => t.customerId === customerId && t.ts >= dayStart && t.ts < dayEnd)
+    .sort((a,b) => b.ts - a.ts);
+
+  document.getElementById('tx-detail-title').textContent = name;
+  const el = document.getElementById('tx-detail-list');
+  if (!txs.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text4);padding:20px;">No transactions.</div>';
+  } else {
+    const pad = n => n.toString().padStart(2,'0');
+    el.innerHTML = txs.map(t => {
+      const isAdj = t.type === 'adjustment';
+      const sign = (t.type==='debt'||isAdj) ? '\u2212' : '+';
+      const cls  = txClass(t);
+      const lbl  = txLabel(t);
+      const d    = new Date(t.ts);
+      const time = pad(d.getHours())+':'+pad(d.getMinutes());
+      return `<div class="tx-row">
+        <div class="tx-row-left">
+          <div class="tx-row-note">${lbl}${t.note?' \u2014 '+esc(t.note):''}</div>
+          <div class="tx-row-time">${time}</div>
+        </div>
+        <div class="tx-row-right">
+          <div class="tx-row-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+          <button class="btn-tx-edit" onclick="editTx('${t.id}')">Edit</button>
+          <button class="btn-tx-del" onclick="deleteTx('${t.id}','month',${dayStart})">Del</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  openModal('m-tx-detail');
+}
+
+// INIT
+// Safari fix: makes divs with onclick respond to touch
+document.addEventListener('touchstart', function(){}, {passive:true});
+loadFontSize();
+
+// Test localStorage availability
+(function() {
+  try {
+    localStorage.setItem('__test__', '1');
+    localStorage.removeItem('__test__');
+  } catch(e) {
+    // localStorage blocked — show warning
+    const w = document.createElement('div');
+    w.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#E05040;color:#fff;padding:16px;z-index:9999;font-size:15px;text-align:center;';
+    w.textContent = 'Storage blocked. Open in Safari \u2192 allow local storage in Settings.';
+    document.body.appendChild(w);
+  }
+})();
+
+renderCustomerList();
+
+// ── Protect against reload losing data ──
+// Re-render on pageshow (fires after back-forward cache restore too)
+window.addEventListener('pageshow', function(e) {
+  renderCustomerList();
+});
+// ── Service Worker for offline PWA ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
