@@ -1,17 +1,24 @@
 // SE7EN Service Worker — caches the app for full offline use
-const CACHE = 'se7en-v17';
+const CACHE = 'se7en-v18';
+// Use relative paths + the directory root so it works in a GitHub Pages subfolder
 const ASSETS = [
-  'index.html',
-  'manifest.json',
-  'icon-192.png',
-  'icon-512.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// Install: cache all app files
+// Install: cache files individually so one failure doesn't break everything
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE).then(function(cache) {
-      return cache.addAll(ASSETS);
+      return Promise.all(ASSETS.map(function(url) {
+        return cache.add(url).catch(function(err) {
+          // Ignore individual failures (e.g. a missing optional asset)
+          return null;
+        });
+      }));
     })
   );
   self.skipWaiting();
@@ -29,13 +36,20 @@ self.addEventListener('activate', function(e) {
 
 // Fetch: serve from cache first, fall back to network
 self.addEventListener('fetch', function(e) {
+  if (e.request.method !== 'GET') return;
   e.respondWith(
     caches.match(e.request).then(function(cached) {
-      return cached || fetch(e.request).then(function(resp) {
+      if (cached) return cached;
+      return fetch(e.request).then(function(resp) {
         return resp;
       }).catch(function() {
-        // If offline and not cached, return the cached index for navigation
-        if (e.request.mode === 'navigate') return caches.match('index.html');
+        // Offline and not cached — for any navigation, serve the cached app shell
+        if (e.request.mode === 'navigate') {
+          return caches.match('./index.html').then(function(idx) {
+            return idx || caches.match('./');
+          });
+        }
+        return undefined;
       });
     })
   );
