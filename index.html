@@ -156,8 +156,8 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
 .summary-hdr{background:var(--bg2);padding:1em 1.14em;border-bottom:2px solid var(--border2);flex-shrink:0;}
 .summary-title{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.4em;font-weight:700;margin-bottom:3px;}
 .summary-period{font-size:0.93em;color:var(--text3);}
-.summary-totals{display:flex;gap:0.71em;padding:0.85em 1em;background:var(--bg3);border-bottom:2px solid var(--border2);flex-shrink:0;}
-.total-box{flex:1;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:0.85em 0.71em;text-align:center;}
+.summary-totals{display:flex;flex-wrap:wrap;gap:0.71em;padding:0.85em 1em;background:var(--bg3);border-bottom:2px solid var(--border2);flex-shrink:0;}
+.total-box{flex:1;min-width:120px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:0.85em 0.71em;text-align:center;}
 .total-lbl{font-size:0.71em;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:6px;}
 .total-val{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;font-size:1.4em;font-weight:700;}
 .total-val.red{color:var(--red);}
@@ -697,6 +697,7 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
       <button class="btn-full" style="background:var(--gbg);border-color:var(--green);color:var(--green);" onclick="settlePayment('cash')">Cash</button>
       <button class="btn-full" style="background:var(--bbg);border-color:var(--blue);color:var(--blue);" onclick="settlePayment('card')">Card</button>
       <button class="btn-full" style="background:var(--bg4);border-color:var(--gold);color:var(--gold2);" onclick="openSplitPayment()">Split (cash + card)</button>
+      <button class="btn-full" style="background:var(--rbg);border-color:var(--red);color:var(--red);" onclick="writeOffDebt()">Write off (loss)</button>
       <button class="btn-modal-cancel" onclick="closeModal('m-bill-settled')">Cancel</button>
     </div>
   </div>
@@ -784,6 +785,7 @@ function txClass(t) {
   if (t.type === 'debt') return 'debt';
   if (t.type === 'credit') return 'credit';
   if (t.type === 'adjustment') return 'debt';
+  if (t.type === 'writeoff') return 'debt';
   if (t.type === 'pay' && t.method === 'card') return 'card';
   return 'pay';
 }
@@ -791,6 +793,7 @@ function txLabel(t) {
   if (t.type === 'debt') return 'Tab';
   if (t.type === 'credit') return 'Add credit';
   if (t.type === 'adjustment') return 'Cash removed';
+  if (t.type === 'writeoff') return 'Written off (loss)';
   if (t.type === 'pay' && t.method === 'card') return 'Card payment';
   if (t.type === 'pay' && t.method === 'cash') return 'Cash payment';
   return 'Payment';
@@ -888,9 +891,19 @@ function renderCustomerList() {
 
   // Always show Add button at top
   const addBtn = '<button class="cust-add-btn" onclick="openAddCustomer()">+ New customer</button>';
+  // Combined balance across all tables
+  const tablesBal = TABLE_DEFS.reduce((sum, def) => {
+    const t = st.customers.find(c => c.id === def.id);
+    return t ? sum + t.balance : sum;
+  }, 0);
+  let tablesSub = '';
+  if (tablesBal < 0) tablesSub = `<div class="cust-bal debt">${balText(tablesBal)}</div>`;
+  else if (tablesBal > 0) tablesSub = `<div class="cust-bal credit">${balText(tablesBal)}</div>`;
+  else tablesSub = `<div class="cust-bal zero">0.00 \u20ac</div>`;
   const tablesCard = `<div class="cust-item" style="border-color:var(--gold);">
       <button class="cust-item-tap" onclick="openTables()" style="display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:100%;">
         <div class="cust-name" style="color:var(--gold2);">Tables</div>
+        ${tablesSub}
       </button>
     </div>`;
 
@@ -1260,6 +1273,33 @@ function askBillSettled(id) {
   openModal('m-bill-settled');
 }
 
+// Write off debt as a loss — clears balance, records loss, no income
+function writeOffDebt() {
+  const st = getState();
+  const c = st.customers.find(x=>x.id===activeCustomerId);
+  if (!c) { closeModal('m-bill-settled'); return; }
+  const owed = c.balance < 0 ? Math.abs(c.balance) : 0;
+  if (owed <= 0) { closeModal('m-bill-settled'); toast('Nothing to write off','err'); return; }
+
+  showConfirm('Write off debt?', c.name+' \u2014 '+f(owed)+' \u20ac will be cleared as a loss (no income recorded).', function() {
+    const st2 = getState();
+    const c2 = st2.customers.find(x=>x.id===activeCustomerId);
+    if (!c2) return;
+    st2.transactions.push({
+      id: 't'+Date.now()+'_'+Math.random().toString(36).slice(2),
+      ts: Date.now(),
+      customerId: c2.id,
+      customerName: c2.name,
+      type: 'writeoff',
+      amount: owed,
+      note: 'Written off (loss)'
+    });
+    finishSettle(st2, c2);
+    closeModal('m-bill-settled');
+    toast(c2.name+' \u2014 written off','ok');
+  });
+}
+
 // Settle full balance via one method (cash or card)
 function settlePayment(method) {
   const st = getState();
@@ -1477,7 +1517,7 @@ function renderRawHistory() {
     const date = pad(d.getDate())+'.'+pad(d.getMonth()+1);
     const time = pad(d.getHours())+':'+pad(d.getMinutes());
     const isAdj = t.type==='adjustment';
-    const sign = (t.type==='debt'||isAdj) ? '\u2212' : '+';
+    const sign = (t.type==='debt'||isAdj||t.type==='writeoff') ? '\u2212' : '+';
     const cls = txClass(t);
     const lbl = txLabel(t);
     return `<div class="tx-row" style="${isAdj?'border-left:3px solid var(--red);':''}">
@@ -1501,16 +1541,19 @@ function renderDaySummary() {
   const ds = todayDayStart(), de = ds+86400000;
   document.getElementById('htab-day').textContent = 'Today — ' + formatDateRange(ds).split(' ')[0];
   const tx = st.transactions.filter(t=>t.ts>=ds&&t.ts<de);
-  let grandTab=0, grandIn=0, cashIn=0, cardIn=0;
+  let grandTab=0, grandIn=0, cashIn=0, cardIn=0, lossIn=0;
   tx.forEach(t=>{
     if(t.type==='debt') grandTab+=t.amount;
     else if(t.type==='pay') { grandIn+=t.amount; if(t.method==='card') cardIn+=t.amount; else cashIn+=t.amount; }
     else if(t.type==='adjustment') { grandIn-=t.amount; cashIn-=t.amount; }
+    else if(t.type==='writeoff') lossIn+=t.amount;
   });
+  const lossBox = lossIn > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(lossIn)} \u20ac</div></div>` : '';
   document.getElementById('summary-totals').innerHTML =
     `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${grandIn >= 0 ? 'green' : 'red'}">${grandIn < 0 ? '\u2212' : '+'}${f(Math.abs(grandIn))} \u20ac</div></div>
      <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val green">${f(cashIn)} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(cardIn)} \u20ac</div></div>`;
+     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(cardIn)} \u20ac</div></div>
+     ${lossBox}`;
   if (!tx.length) { document.getElementById('summary-list').innerHTML='<div class="summary-empty">No transactions today.</div>'; return; }
   const by={};
   tx.forEach(t=>{ if(!by[t.customerId]) by[t.customerId]={id:t.customerId,name:t.customerName,tab:0,paid:0,credit:0,count:0}; if(t.type==='debt') by[t.customerId].tab+=t.amount; else if(t.type==='pay') by[t.customerId].paid+=t.amount; else if(t.type==='credit') by[t.customerId].credit+=t.amount; by[t.customerId].count++; });
@@ -1739,7 +1782,7 @@ function openCustHistory(id) {
     const date = pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();
     const time = pad(d.getHours())+':'+pad(d.getMinutes());
     const isAdj = t.type==='adjustment';
-    const sign = (t.type==='debt'||isAdj)?'\u2212':'+';
+    const sign = (t.type==='debt'||isAdj||t.type==='writeoff')?'\u2212':'+';
     const cls  = txClass(t);
     const lbl  = txLabel(t);
     return `<div class="tx-row">
@@ -1945,21 +1988,24 @@ function renderMonthReport() {
     const d = new Date(ds);
     if (d.getFullYear() !== year || d.getMonth() !== month) return;
     const key = ds;
-    if (!dayMap[key]) dayMap[key] = { date: d, tab: 0, paid: 0, cash: 0, card: 0, dayStart: ds };
+    if (!dayMap[key]) dayMap[key] = { date: d, tab: 0, paid: 0, cash: 0, card: 0, loss: 0, dayStart: ds };
     if (t.type === 'debt') dayMap[key].tab += t.amount;
     else if (t.type === 'pay') { dayMap[key].paid += t.amount; if(t.method==='card') dayMap[key].card += t.amount; else dayMap[key].cash += t.amount; }
     else if (t.type === 'adjustment') { dayMap[key].paid -= t.amount; dayMap[key].cash -= t.amount; }
+    else if (t.type === 'writeoff') dayMap[key].loss += t.amount;
   });
 
   const days = Object.values(dayMap).sort((a,b) => b.date - a.date);
 
-  let totalTab = 0, totalPaid = 0, totalCash = 0, totalCard = 0;
-  days.forEach(d => { totalTab += d.tab; totalPaid += d.paid; totalCash += d.cash; totalCard += d.card; });
+  let totalTab = 0, totalPaid = 0, totalCash = 0, totalCard = 0, totalLoss = 0;
+  days.forEach(d => { totalTab += d.tab; totalPaid += d.paid; totalCash += d.cash; totalCard += d.card; totalLoss += (d.loss||0); });
 
+  const mLossBox = totalLoss > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(totalLoss)} \u20ac</div></div>` : '';
   document.getElementById('month-totals').innerHTML =
     `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${totalPaid >= 0 ? 'green' : 'red'}">${totalPaid < 0 ? '\u2212' : '+'}${f(Math.abs(totalPaid))} \u20ac</div></div>
      <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val green">${f(totalCash)} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(totalCard)} \u20ac</div></div>`;
+     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(totalCard)} \u20ac</div></div>
+     ${mLossBox}`;
 
   document.getElementById('month-subtitle').textContent = days.length + ' day' + (days.length!==1?'s':'') + ' with activity';
 
@@ -2069,7 +2115,7 @@ function openTxDetail(context, key, label) {
     const pad = n => n.toString().padStart(2,'0');
     el.innerHTML = txs.map(t => {
       const isAdj = t.type === 'adjustment';
-      const sign = (t.type==='debt' || isAdj) ? '\u2212' : '+';
+      const sign = (t.type==='debt' || isAdj || t.type==='writeoff') ? '\u2212' : '+';
       const cls  = txClass(t);
       const lbl  = txLabel(t);
       const d    = new Date(t.ts);
@@ -2297,7 +2343,7 @@ function openCustomerDayDetail(customerId, name, dayStart) {
     const pad = n => n.toString().padStart(2,'0');
     el.innerHTML = txs.map(t => {
       const isAdj = t.type === 'adjustment';
-      const sign = (t.type==='debt'||isAdj) ? '\u2212' : '+';
+      const sign = (t.type==='debt'||isAdj||t.type==='writeoff') ? '\u2212' : '+';
       const cls  = txClass(t);
       const lbl  = txLabel(t);
       const d    = new Date(t.ts);

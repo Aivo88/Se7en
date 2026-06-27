@@ -1,5 +1,5 @@
 // SE7EN Service Worker — caches the app for full offline use
-const CACHE = 'se7en-v11';
+const CACHE = 'se7en-v13';
 const ASSETS = [
   'index.html',
   'manifest.json',
