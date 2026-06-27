@@ -937,7 +937,7 @@ function renderTablesManage() {
   el.innerHTML = tables.map(c =>
     `<div class="cust-manage-row">
        <div style="flex:1;min-width:0;">
-         <div class="cust-manage-name">${esc(c.name)}</div>
+         <button class="cust-manage-name" onclick="openRenameCustomer('${c.id}')" style="background:none;border:none;text-align:left;display:block;width:100%;">${esc(c.name)} <span style="color:var(--text4);font-size:0.75em;">✎</span></button>
          <div class="cust-manage-bal ${balClass(c.balance)}">${balText(c.balance)}</div>
        </div>
        <button class="btn-del-cust" onclick="removeTable('${c.id}')">Remove</button>
@@ -1845,6 +1845,7 @@ function confirmRenameCust() {
   saveState(st);
   closeModal('m-rename-cust');
   renderCustManage();
+  renderTablesManage();
   renderCustomerList();
   toast(oldName + ' → ' + name, 'ok');
 }
