@@ -468,6 +468,16 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
   <!-- TAB: Customers -->
   <div class="settings-body" id="spanel-customers" style="display:none;">
     <div class="settings-section">
+      <div class="settings-section-title">Tables</div>
+      <div style="color:var(--text3);font-size:0.85em;margin-bottom:10px;">Permanent tables that stay on the Tables screen. A table with an open balance can't be removed.</div>
+      <div class="cust-manage-list" id="tables-manage-list" style="margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="modal-input" id="new-table-name" placeholder="New table name" maxlength="20" style="flex:1;margin:0;">
+        <button class="btn-icon" style="border-color:var(--gold);color:var(--gold2);flex-shrink:0;" onclick="addTable()">Add</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Customers</div>
       <div class="cust-manage-list" id="cust-manage-list"></div>
     </div>
   </div>
@@ -851,16 +861,20 @@ const TABLE_DEFS = [
   { id: '__smoking2__', name: 'Smoking 2' },
 ];
 
+function getTables(st) {
+  return (st || getState()).customers.filter(c => c.permanent);
+}
+
 function ensureTables() {
   const st = getState();
-  let changed = false;
-  TABLE_DEFS.forEach(def => {
-    if (!st.customers.find(c => c.id === def.id)) {
+  // Only seed the 6 defaults on the very first run (no tables exist yet and not seeded before)
+  if (!st._tablesSeeded && !st.customers.some(c => c.permanent)) {
+    TABLE_DEFS.forEach(def => {
       st.customers.push({ id: def.id, name: def.name, balance: 0, permanent: true });
-      changed = true;
-    }
-  });
-  if (changed) saveState(st);
+    });
+    st._tablesSeeded = true;
+    saveState(st);
+  }
 }
 
 function openTables() {
@@ -871,8 +885,9 @@ function openTables() {
 
 function renderTables() {
   const st = getState();
-  const tables = TABLE_DEFS.map(def => st.customers.find(c => c.id === def.id)).filter(Boolean);
+  const tables = getTables(st);
   const el = document.getElementById('tables-list');
+  if (!tables.length) { el.innerHTML='<div class="empty-hint">No tables. Add them in Settings → Customers.</div>'; return; }
   el.innerHTML = '<div class="customer-grid">' + tables.map(c => {
     return `<div class="cust-item">
       <button class="cust-item-tap" onclick="openCharge('${c.id}')">
@@ -884,6 +899,51 @@ function renderTables() {
   }).join('') + '</div>';
 }
 
+function addTable() {
+  const name = document.getElementById('new-table-name').value.trim();
+  if (!name) { toast('Enter a table name','err'); return; }
+  const st = getState();
+  if (st.customers.some(c => c.permanent && c.name.toLowerCase()===name.toLowerCase())) {
+    toast('Table already exists','err'); return;
+  }
+  st.customers.push({ id: '__table_'+Date.now()+'__', name: name, balance: 0, permanent: true });
+  st._tablesSeeded = true;
+  saveState(st);
+  document.getElementById('new-table-name').value = '';
+  renderTablesManage();
+  toast(name+' added','ok');
+}
+
+function removeTable(id) {
+  const st = getState();
+  const c = st.customers.find(x => x.id===id);
+  if (!c) return;
+  if (c.balance < 0) { toast('Settle the balance first','err'); return; }
+  showConfirm('Remove table?', 'Remove '+c.name+'? Its history is kept.', function() {
+    const st2 = getState();
+    st2.customers = st2.customers.filter(x => x.id!==id);
+    saveState(st2);
+    renderTablesManage();
+    toast('Table removed','info');
+  });
+}
+
+function renderTablesManage() {
+  const st = getState();
+  const tables = getTables(st);
+  const el = document.getElementById('tables-manage-list');
+  if (!el) return;
+  if (!tables.length) { el.innerHTML='<div style="color:var(--text4);font-size:0.93em;text-align:center;padding:8px;">No tables.</div>'; return; }
+  el.innerHTML = tables.map(c =>
+    `<div class="cust-manage-row">
+       <div style="flex:1;min-width:0;">
+         <div class="cust-manage-name">${esc(c.name)}</div>
+         <div class="cust-manage-bal ${balClass(c.balance)}">${balText(c.balance)}</div>
+       </div>
+       <button class="btn-del-cust" onclick="removeTable('${c.id}')">Remove</button>
+     </div>`).join('');
+}
+
 function renderCustomerList() {
   const st = getState();
   const filtered = st.customers.filter(c => !c.permanent && c.id !== '__cash__' && c.id !== '__settled__');
@@ -892,10 +952,7 @@ function renderCustomerList() {
   // Always show Add button at top
   const addBtn = '<button class="cust-add-btn" onclick="openAddCustomer()">+ New customer</button>';
   // Combined balance across all tables
-  const tablesBal = TABLE_DEFS.reduce((sum, def) => {
-    const t = st.customers.find(c => c.id === def.id);
-    return t ? sum + t.balance : sum;
-  }, 0);
+  const tablesBal = getTables(st).reduce((sum, t) => sum + t.balance, 0);
   let tablesSub = '';
   if (tablesBal < 0) tablesSub = `<div class="cust-bal debt">${balText(tablesBal)}</div>`;
   else if (tablesBal > 0) tablesSub = `<div class="cust-bal credit">${balText(tablesBal)}</div>`;
@@ -1195,7 +1252,7 @@ function switchChargeTab(tab) {
   document.getElementById('confirm-btn').style.display = tab==='charge' ? '' : 'none';
   if (tab==='history') {
     histBtn.className = 'charge-tab active';
-    histBtn.innerHTML = '\u2190 Back to charge';
+    histBtn.innerHTML = 'Back to charge';
     renderCustHist();
   } else {
     histBtn.className = 'charge-tab';
@@ -1225,7 +1282,7 @@ function renderCustHist() {
   const el = document.getElementById('cust-hist-list');
   if (!txs.length) { el.innerHTML='<div class="cust-hist-empty">No transactions today.</div>'; return; }
   el.innerHTML = txs.map(t => {
-    const sign = t.type==='debt'?'\u2212':'+';
+    const sign = (t.type==='debt'||t.type==='adjustment'||t.type==='writeoff')?'\u2212':'+';
     const cls  = txClass(t);
     const lbl  = txLabel(t);
     return `<div class="cust-hist-item">
@@ -1233,9 +1290,31 @@ function renderCustHist() {
         <div class="cust-hist-type">${lbl}${t.note?' \u2014 '+esc(t.note):''}</div>
         <div class="cust-hist-time">${formatTime(t.ts)}</div>
       </div>
-      <div class="cust-hist-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <div class="cust-hist-amt ${cls}">${sign}${f(t.amount)} \u20ac</div>
+        <button class="btn-tx-edit" onclick="editTx('${t.id}')">Edit</button>
+        <button class="btn-tx-del" onclick="deleteTxFromCharge('${t.id}')">Del</button>
+      </div>
     </div>`;
   }).join('');
+}
+
+function deleteTxFromCharge(txId) {
+  showConfirm('Delete transaction?', 'This will remove the transaction and correct the balance.', function() {
+    const st = getState();
+    const t = st.transactions.find(x=>x.id===txId);
+    if (!t) return;
+    // Reverse balance effect
+    const c = st.customers.find(x=>x.id===t.customerId);
+    if (c) {
+      if (t.type==='debt') c.balance += t.amount;
+      else if (t.type==='pay'||t.type==='credit') c.balance -= t.amount;
+    }
+    st.transactions = st.transactions.filter(x=>x.id!==txId);
+    saveState(st);
+    renderCustHist();
+    toast('Deleted','ok');
+  });
 }
 
 function doCharge() {
@@ -1626,6 +1705,7 @@ function switchSettingsTab(tab) {
   if (tab === 'backup') initPurgeSelectors();
   if (tab === 'amounts') initFontSizeSlider();
   if (tab === 'update') initUpdateTab();
+  if (tab === 'customers') { renderCustManage(); renderTablesManage(); }
 }
 
 function initUpdateTab() {
@@ -1723,8 +1803,9 @@ function addQuickSlot() {
 function removeQuickSlot(i) { editingQuickAmounts.splice(i,1); renderQuickSettings(); }
 function renderCustManage() {
   const st = getState(); const el=document.getElementById('cust-manage-list');
-  if (!st.customers.length) { el.innerHTML='<div style="color:var(--text4);font-size:1em;text-align:center;padding:10px;">No customers.</div>'; return; }
-  el.innerHTML = st.customers.sort((a,b)=>a.name.localeCompare(b.name)).map(c=>
+  const custs = st.customers.filter(c => !c.permanent && c.id !== '__cash__' && c.id !== '__settled__');
+  if (!custs.length) { el.innerHTML='<div style="color:var(--text4);font-size:1em;text-align:center;padding:10px;">No customers.</div>'; return; }
+  el.innerHTML = custs.sort((a,b)=>a.name.localeCompare(b.name)).map(c=>
     `<div class="cust-manage-row">
        <div style="flex:1;min-width:0;">
          <button class="cust-manage-name" onclick="openRenameCustomer('${c.id}')" style="background:none;border:none;text-align:left;display:block;width:100%;">${esc(c.name)} <span style="color:var(--text4);font-size:0.75em;">✎</span></button>
@@ -2187,6 +2268,10 @@ function confirmEditTx() {
     }
   }
   renderCustomerList();
+  // If charge screen history is open, refresh it
+  if (document.getElementById('s-charge').classList.contains('active') && _chargeShowingHistory) {
+    renderCustHist();
+  }
 }
 
 function deleteTx(txId, context, dayKey) {
