@@ -1741,36 +1741,46 @@ function checkForUpdate() {
   statusEl.textContent = 'Checking for updates...';
   statusEl.style.color = 'var(--text3)';
 
-  // Tell the service worker to update, clear caches, then reload
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then(function(reg) {
-      if (reg) {
-        reg.update().then(function() {
-          // Clear all caches so fresh files load
-          if ('caches' in window) {
-            caches.keys().then(function(keys) {
-              return Promise.all(keys.map(function(k){ return caches.delete(k); }));
-            }).then(function() {
-              statusEl.textContent = 'Updating... reloading now.';
-              statusEl.style.color = 'var(--green)';
-              setTimeout(function(){ location.reload(true); }, 800);
-            });
-          } else {
-            setTimeout(function(){ location.reload(true); }, 500);
-          }
-        }).catch(function() {
-          statusEl.textContent = 'Could not check. Try again.';
-          statusEl.style.color = 'var(--red)';
-        });
-      } else {
-        // No service worker — just hard reload
-        statusEl.textContent = 'Reloading...';
-        setTimeout(function(){ location.reload(true); }, 500);
-      }
-    });
-  } else {
+  if (!('serviceWorker' in navigator)) {
     setTimeout(function(){ location.reload(true); }, 500);
+    return;
   }
+
+  // Ask the service worker to re-check. The new SW (new cache name) will
+  // build its cache in its own install step BEFORE old caches are removed,
+  // so the app is never left without a cache (offline stays safe).
+  navigator.serviceWorker.getRegistration().then(function(reg) {
+    if (!reg) { setTimeout(function(){ location.reload(true); }, 500); return; }
+
+    let reloaded = false;
+    function doReload() {
+      if (reloaded) return;
+      reloaded = true;
+      statusEl.textContent = 'Updated \u2014 reloading.';
+      statusEl.style.color = 'var(--green)';
+      setTimeout(function(){ location.reload(); }, 600);
+    }
+
+    reg.update().then(function() {
+      // If a new worker is found and installs, reload once it's ready
+      if (reg.installing || reg.waiting) {
+        const sw = reg.installing || reg.waiting;
+        sw.addEventListener('statechange', function() {
+          if (sw.state === 'activated' || sw.state === 'installed') doReload();
+        });
+        // Safety: reload after a short delay even if state events are missed
+        setTimeout(doReload, 2500);
+      } else {
+        // Already up to date — just reload to be sure
+        statusEl.textContent = 'Already up to date.';
+        statusEl.style.color = 'var(--green)';
+        setTimeout(function(){ location.reload(); }, 800);
+      }
+    }).catch(function() {
+      statusEl.textContent = 'Could not check. Try again.';
+      statusEl.style.color = 'var(--red)';
+    });
+  });
 }
 
 // Keep online status live
