@@ -1281,6 +1281,7 @@ function writeOffDebt() {
   const owed = c.balance < 0 ? Math.abs(c.balance) : 0;
   if (owed <= 0) { closeModal('m-bill-settled'); toast('Nothing to write off','err'); return; }
 
+  closeModal('m-bill-settled');
   showConfirm('Write off debt?', c.name+' \u2014 '+f(owed)+' \u20ac will be cleared as a loss (no income recorded).', function() {
     const st2 = getState();
     const c2 = st2.customers.find(x=>x.id===activeCustomerId);
@@ -1295,7 +1296,6 @@ function writeOffDebt() {
       note: 'Written off (loss)'
     });
     finishSettle(st2, c2);
-    closeModal('m-bill-settled');
     toast(c2.name+' \u2014 written off','ok');
   });
 }
