@@ -946,7 +946,7 @@ function renderTablesManage() {
 
 function renderCustomerList() {
   const st = getState();
-  const filtered = st.customers.filter(c => !c.permanent && c.id !== '__cash__' && c.id !== '__settled__');
+  const filtered = st.customers.filter(c => !c.permanent && c.id !== '__cash__' && c.id !== '__card__' && c.id !== '__settled__');
   const el = document.getElementById('customer-list');
 
   // Always show Add button at top
@@ -1063,7 +1063,7 @@ function doQuickCard() {
   st.transactions.push({
     id: 't'+Date.now()+'_'+Math.random().toString(36).slice(2),
     ts: Date.now(),
-    customerId: '__cash__',
+    customerId: '__card__',
     customerName: 'Card',
     type: 'pay',
     method: 'card',
@@ -1098,7 +1098,7 @@ function doAddCustomer() {
   }
 
   // Check history for same name — skip special internal IDs
-  const INTERNAL = ['__cash__','__settled__'];
+  const INTERNAL = ['__cash__','__card__','__settled__'];
   const oldTx = st.transactions.find(t=>
     !INTERNAL.includes(t.customerId) &&
     t.customerName.toLowerCase()===name.toLowerCase()
@@ -1635,19 +1635,21 @@ function renderDaySummary() {
      ${lossBox}`;
   if (!tx.length) { document.getElementById('summary-list').innerHTML='<div class="summary-empty">No transactions today.</div>'; return; }
   const by={};
-  tx.forEach(t=>{ if(!by[t.customerId]) by[t.customerId]={id:t.customerId,name:t.customerName,tab:0,paid:0,credit:0,count:0}; if(t.type==='debt') by[t.customerId].tab+=t.amount; else if(t.type==='pay') by[t.customerId].paid+=t.amount; else if(t.type==='credit') by[t.customerId].credit+=t.amount; by[t.customerId].count++; });
+  tx.forEach(t=>{ if(!by[t.customerId]) by[t.customerId]={id:t.customerId,name:t.customerName,tab:0,paid:0,credit:0,cardPaid:0,count:0}; if(t.type==='debt') by[t.customerId].tab+=t.amount; else if(t.type==='pay') { by[t.customerId].paid+=t.amount; if(t.method==='card') by[t.customerId].cardPaid+=t.amount; } else if(t.type==='credit') by[t.customerId].credit+=t.amount; by[t.customerId].count++; });
   document.getElementById('summary-list').innerHTML = Object.values(by)
     .filter(r => r.tab > 0 || r.paid > 0 || r.credit > 0)
     .sort((a,b) => (b.tab-b.paid) - (a.tab-a.paid))
     .map(r => {
     const unpaid = r.tab - r.paid;
+    const allCard = r.paid > 0 && r.cardPaid >= r.paid - 0.001; // all payments were card
+    const paidColor = allCard ? 'style="color:var(--blue);"' : '';
     let amtHtml;
     if (r.tab === 0 && r.paid === 0 && r.credit > 0) {
       // Credit only
       amtHtml = `<div style="color:var(--gold2);font-size:1.07em;font-weight:700;">+${f(r.credit)} \u20ac credit</div>`;
     } else if (unpaid <= 0) {
       // Fully paid
-      amtHtml = `<div class="summary-row-paid">+${f(r.paid)} \u20ac</div>`;
+      amtHtml = `<div class="summary-row-paid" ${paidColor}>+${f(r.paid)} \u20ac</div>`;
       if (r.credit > 0) amtHtml += `<div style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>`;
     } else if (r.paid === 0) {
       // Nothing paid
@@ -1655,7 +1657,7 @@ function renderDaySummary() {
       if (r.credit > 0) amtHtml += `<div style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>`;
     } else {
       // Partially paid
-      amtHtml = `<div class="summary-row-tab">\u2212${f(unpaid)} \u20ac</div><div class="summary-row-paid">+${f(r.paid)} \u20ac in</div>`;
+      amtHtml = `<div class="summary-row-tab">\u2212${f(unpaid)} \u20ac</div><div class="summary-row-paid" ${paidColor}>+${f(r.paid)} \u20ac in</div>`;
       if (r.credit > 0) amtHtml += `<div style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>`;
     }
     return `<button class="summary-row" onclick="openTxDetail('day','${r.id}','${esc(r.name)}')">
@@ -1803,7 +1805,7 @@ function addQuickSlot() {
 function removeQuickSlot(i) { editingQuickAmounts.splice(i,1); renderQuickSettings(); }
 function renderCustManage() {
   const st = getState(); const el=document.getElementById('cust-manage-list');
-  const custs = st.customers.filter(c => !c.permanent && c.id !== '__cash__' && c.id !== '__settled__');
+  const custs = st.customers.filter(c => !c.permanent && c.id !== '__cash__' && c.id !== '__card__' && c.id !== '__settled__');
   if (!custs.length) { el.innerHTML='<div style="color:var(--text4);font-size:1em;text-align:center;padding:10px;">No customers.</div>'; return; }
   el.innerHTML = custs.sort((a,b)=>a.name.localeCompare(b.name)).map(c=>
     `<div class="cust-manage-row">
@@ -2153,9 +2155,9 @@ function openTxDetail(context, key, label) {
   if (context === 'month') {
     const byCustomer = {};
     txs.forEach(t => {
-      if (!byCustomer[t.customerId]) byCustomer[t.customerId] = { name: t.customerName, tab: 0, paid: 0, credit: 0, adjustment: 0, customerId: t.customerId, ids: [], isCash: t.customerId === '__cash__' || t.customerId === '__settled__' };
+      if (!byCustomer[t.customerId]) byCustomer[t.customerId] = { name: t.customerName, tab: 0, paid: 0, credit: 0, adjustment: 0, cardPaid: 0, customerId: t.customerId, ids: [], isCash: t.customerId === '__cash__' || t.customerId === '__card__' || t.customerId === '__settled__' };
       if (t.type === 'debt') byCustomer[t.customerId].tab += t.amount;
-      else if (t.type === 'pay') byCustomer[t.customerId].paid += t.amount;
+      else if (t.type === 'pay') { byCustomer[t.customerId].paid += t.amount; if(t.method==='card') byCustomer[t.customerId].cardPaid += t.amount; }
       else if (t.type === 'credit') byCustomer[t.customerId].credit += t.amount;
       else if (t.type === 'adjustment') byCustomer[t.customerId].adjustment += t.amount;
       byCustomer[t.customerId].ids.push(t.id);
@@ -2169,15 +2171,18 @@ function openTxDetail(context, key, label) {
 
     el.innerHTML = rows.map(r => {
       const netOwed = r.tab - r.paid;
+      const allCard = r.paid > 0 && r.cardPaid >= r.paid - 0.001;
+      const payClass = allCard ? '' : 'pay';
+      const payStyle = allCard ? 'style="color:var(--blue);"' : '';
       const creditLine = r.credit > 0 ? `<div class="tx-row-amt" style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>` : '';
       const adjLine = r.adjustment > 0 ? `<div class="tx-row-amt debt" style="font-size:0.93em;">\u2212${f(r.adjustment)} \u20ac removed</div>` : '';
       let amtHtml = '';
       if (r.adjustment > 0 && r.paid === 0 && r.tab === 0) {
         amtHtml = `<div class="tx-row-amt debt">\u2212${f(r.adjustment)} \u20ac</div>`;
       } else if (r.paid > 0 && netOwed <= 0) {
-        amtHtml = `<div class="tx-row-amt pay">+${f(r.paid)} \u20ac</div>${adjLine}`;
+        amtHtml = `<div class="tx-row-amt ${payClass}" ${payStyle}>+${f(r.paid)} \u20ac</div>${adjLine}`;
       } else if (r.paid > 0 && netOwed > 0) {
-        amtHtml = `<div class="tx-row-amt pay">+${f(r.paid)} \u20ac</div><div class="tx-row-amt debt" style="font-size:0.93em;">\u2212${f(netOwed)} \u20ac open</div>${adjLine}`;
+        amtHtml = `<div class="tx-row-amt ${payClass}" ${payStyle}>+${f(r.paid)} \u20ac</div><div class="tx-row-amt debt" style="font-size:0.93em;">\u2212${f(netOwed)} \u20ac open</div>${adjLine}`;
       } else if (r.tab > 0) {
         amtHtml = `<div class="tx-row-amt debt">\u2212${f(r.tab)} \u20ac</div>${adjLine}`;
       }
