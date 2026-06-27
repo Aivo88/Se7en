@@ -1007,11 +1007,11 @@ function renderCustomerList() {
   document.getElementById('home-totals2').innerHTML =
     `<div class="home-total-box" style="border-color:var(--green);">
        <div class="home-total-lbl">Cash</div>
-       <div class="home-total-val green">${f(cashTotal)} \u20ac</div>
+       <div class="home-total-val ${cashTotal >= 0 ? 'green' : 'red'}">${cashTotal < 0 ? '\u2212' : ''}${f(Math.abs(cashTotal))} \u20ac</div>
      </div>
      <div class="home-total-box" style="border-color:var(--blue);">
        <div class="home-total-lbl">Card</div>
-       <div class="home-total-val" style="color:var(--blue);">${f(cardTotal)} \u20ac</div>
+       <div class="home-total-val" style="color:${cardTotal >= 0 ? 'var(--blue)' : 'var(--red)'};">${cardTotal < 0 ? '\u2212' : ''}${f(Math.abs(cardTotal))} \u20ac</div>
      </div>`;
 }
 
@@ -1630,8 +1630,8 @@ function renderDaySummary() {
   const lossBox = lossIn > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(lossIn)} \u20ac</div></div>` : '';
   document.getElementById('summary-totals').innerHTML =
     `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${grandIn >= 0 ? 'green' : 'red'}">${grandIn < 0 ? '\u2212' : '+'}${f(Math.abs(grandIn))} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val green">${f(cashIn)} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(cardIn)} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val ${cashIn >= 0 ? 'green' : 'red'}">${cashIn < 0 ? '\u2212' : ''}${f(Math.abs(cashIn))} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:${cardIn >= 0 ? 'var(--blue)' : 'var(--red)'};">${cardIn < 0 ? '\u2212' : ''}${f(Math.abs(cardIn))} \u20ac</div></div>
      ${lossBox}`;
   if (!tx.length) { document.getElementById('summary-list').innerHTML='<div class="summary-empty">No transactions today.</div>'; return; }
   const by={};
@@ -2084,8 +2084,8 @@ function renderMonthReport() {
   const mLossBox = totalLoss > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(totalLoss)} \u20ac</div></div>` : '';
   document.getElementById('month-totals').innerHTML =
     `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${totalPaid >= 0 ? 'green' : 'red'}">${totalPaid < 0 ? '\u2212' : '+'}${f(Math.abs(totalPaid))} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val green">${f(totalCash)} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:var(--blue);">${f(totalCard)} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val ${totalCash >= 0 ? 'green' : 'red'}">${totalCash < 0 ? '\u2212' : ''}${f(Math.abs(totalCash))} \u20ac</div></div>
+     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:${totalCard >= 0 ? 'var(--blue)' : 'var(--red)'};">${totalCard < 0 ? '\u2212' : ''}${f(Math.abs(totalCard))} \u20ac</div></div>
      ${mLossBox}`;
 
   document.getElementById('month-subtitle').textContent = days.length + ' day' + (days.length!==1?'s':'') + ' with activity';
