@@ -1,12 +1,13 @@
 // SE7EN Service Worker — caches the app for full offline use
-const CACHE = 'se7en-v21';
+const CACHE = 'se7en-v22';
 // Relative paths + the directory root so it works in a GitHub Pages subfolder
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './logo.png'
 ];
 
 // Install: build the new cache fully before taking over.
