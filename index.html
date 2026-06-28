@@ -1304,15 +1304,12 @@ function deleteTxFromCharge(txId) {
     const st = getState();
     const t = st.transactions.find(x=>x.id===txId);
     if (!t) return;
-    // Reverse balance effect
-    const c = st.customers.find(x=>x.id===t.customerId);
-    if (c) {
-      if (t.type==='debt') c.balance += t.amount;
-      else if (t.type==='pay'||t.type==='credit') c.balance -= t.amount;
-    }
+    const custId = t.customerId, custName = t.customerName;
     st.transactions = st.transactions.filter(x=>x.id!==txId);
+    restoreCustomerAfterChange(st, custId, custName);
     saveState(st);
     renderCustHist();
+    renderCustomerList();
     toast('Deleted','ok');
   });
 }
@@ -2259,15 +2256,9 @@ function confirmEditTx() {
   const tx = st.transactions.find(t => t.id === _editTxId);
   if (!tx) return;
 
-  // Adjust customer balance for the difference
-  const diff = val - tx.amount;
-  const c = st.customers.find(x => x.id === tx.customerId);
-  if (c) {
-    if (tx.type === 'debt') c.balance -= diff;
-    else c.balance += diff;
-  }
-
   tx.amount = val;
+  // Recompute balance (handles customers removed by settle too)
+  restoreCustomerAfterChange(st, tx.customerId, tx.customerName);
   saveState(st);
   closeModal('m-edit-tx');
   _editTxId = null;
@@ -2290,21 +2281,38 @@ function confirmEditTx() {
   }
 }
 
+// After deleting/editing a transaction, recompute a customer's balance from
+// their remaining transactions. Recreates the customer if they were removed
+// by a settle but still have transactions (e.g. you delete the settling payment).
+function restoreCustomerAfterChange(st, customerId, customerName) {
+  const INTERNAL = ['__cash__','__card__','__settled__'];
+  if (INTERNAL.includes(customerId)) return; // walk-in cash/card aren't real customers
+
+  const txs = st.transactions.filter(t => t.customerId === customerId);
+  // Recompute balance: payments, credit and write-offs raise balance; debt lowers it
+  let bal = 0;
+  txs.forEach(t => {
+    if (t.type === 'debt') bal -= t.amount;
+    else if (t.type === 'pay' || t.type === 'credit' || t.type === 'writeoff') bal += t.amount;
+  });
+
+  const existing = st.customers.find(c => c.id === customerId);
+  if (existing) {
+    existing.balance = bal;
+  } else if (txs.length > 0) {
+    // Customer was removed by settle but still has history — bring them back
+    st.customers.push({ id: customerId, name: customerName, balance: bal });
+  }
+}
+
 function deleteTx(txId, context, dayKey) {
   const st = getState();
   const tx = st.transactions.find(t => t.id === txId);
   if (!tx) return;
 
-  // Reverse effect on customer balance if customer still exists
-  if (tx.type === 'debt') {
-    const c = st.customers.find(x => x.id === tx.customerId);
-    if (c) c.balance += tx.amount; // undo debit
-  } else {
-    const c = st.customers.find(x => x.id === tx.customerId);
-    if (c) c.balance -= tx.amount; // undo credit
-  }
-
+  const custId = tx.customerId, custName = tx.customerName;
   st.transactions = st.transactions.filter(t => t.id !== txId);
+  restoreCustomerAfterChange(st, custId, custName);
   saveState(st);
   toast('Transaction deleted','info');
 
