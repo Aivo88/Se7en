@@ -485,13 +485,13 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
   <!-- TAB: Cash adjustment -->
   <div class="settings-body" id="spanel-cash" style="display:none;">
     <div class="settings-section">
-      <div class="settings-section-title">Cash adjustment</div>
+      <div class="settings-section-title">Cash &amp; expenses</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div>
           <div class="section-label" style="margin-bottom:6px;">Type</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <button class="mode-btn active-pay" id="cadj-add" onclick="setCashAdjType('add')">+ Add cash</button>
-            <button class="mode-btn" id="cadj-remove" onclick="setCashAdjType('remove')">− Remove cash</button>
+            <button class="mode-btn" id="cadj-remove" onclick="setCashAdjType('remove')">− Expense</button>
           </div>
         </div>
         <div>
@@ -507,7 +507,7 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
         </div>
         <div>
           <div class="section-label" style="margin-bottom:6px;">Note</div>
-          <input type="text" id="cadj-note" placeholder="e.g. Till correction, cash drop..." class="note-input">
+          <input type="text" id="cadj-note" placeholder="e.g. Supplier bill, rent, restock..." class="note-input">
         </div>
         <button class="btn-confirm-charge pay" id="cadj-btn" onclick="doCashAdj()" disabled style="padding:14px;font-size:1.14em;">Add cash</button>
       </div>
@@ -802,7 +802,7 @@ function txClass(t) {
 function txLabel(t) {
   if (t.type === 'debt') return 'Tab';
   if (t.type === 'credit') return 'Add credit';
-  if (t.type === 'adjustment') return 'Cash removed';
+  if (t.type === 'adjustment') return 'Expense';
   if (t.type === 'writeoff') return 'Written off (loss)';
   if (t.type === 'pay' && t.method === 'card') return 'Card payment';
   if (t.type === 'pay' && t.method === 'cash') return 'Cash payment';
@@ -1578,7 +1578,7 @@ function switchHistoryTab(tab) {
   document.getElementById('hpanel-month').style.display = tab==='month' ? 'flex' : 'none';
   document.getElementById('hpanel-raw').style.display = tab==='raw' ? '' : 'none';
   if (tab==='day') renderDaySummary();
-  else if (tab==='month') { if (!reportMonth) { const n=new Date(); reportMonth={year:n.getFullYear(),month:n.getMonth()}; } renderMonthReport(); }
+  else if (tab==='month') { if (!reportMonth) { const n=new Date(); reportMonth={year:n.getFullYear(),month:n.getMonth(),summary:false}; } else { reportMonth.summary = false; } renderMonthReport(); }
   else renderRawHistory();
 }
 
@@ -1617,19 +1617,21 @@ function renderDaySummary() {
   const ds = todayDayStart(), de = ds+86400000;
   document.getElementById('htab-day').textContent = 'Today — ' + formatDateRange(ds).split(' ')[0];
   const tx = st.transactions.filter(t=>t.ts>=ds&&t.ts<de);
-  let grandTab=0, grandIn=0, cashIn=0, cardIn=0, lossIn=0;
+  let grandTab=0, grandIn=0, cashIn=0, cardIn=0, lossIn=0, removedIn=0;
   tx.forEach(t=>{
     if(t.type==='debt') grandTab+=t.amount;
     else if(t.type==='pay') { grandIn+=t.amount; if(t.method==='card') cardIn+=t.amount; else cashIn+=t.amount; }
-    else if(t.type==='adjustment') { grandIn-=t.amount; cashIn-=t.amount; }
+    else if(t.type==='adjustment') { grandIn-=t.amount; cashIn-=t.amount; removedIn+=t.amount; }
     else if(t.type==='writeoff') lossIn+=t.amount;
   });
   const lossBox = lossIn > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(lossIn)} \u20ac</div></div>` : '';
+  const removedBox = removedIn > 0 ? `<div class="total-box" style="border:1.5px solid var(--gold);"><div class="total-lbl">Expenses</div><div class="total-val" style="color:var(--gold2);">\u2212${f(removedIn)} \u20ac</div></div>` : '';
   document.getElementById('summary-totals').innerHTML =
     `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${grandIn >= 0 ? 'green' : 'red'}">${grandIn < 0 ? '\u2212' : '+'}${f(Math.abs(grandIn))} \u20ac</div></div>
      <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val ${cashIn >= 0 ? 'green' : 'red'}">${cashIn < 0 ? '\u2212' : ''}${f(Math.abs(cashIn))} \u20ac</div></div>
      <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:${cardIn >= 0 ? 'var(--blue)' : 'var(--red)'};">${cardIn < 0 ? '\u2212' : ''}${f(Math.abs(cardIn))} \u20ac</div></div>
-     ${lossBox}`;
+     ${lossBox}
+     ${removedBox}`;
   if (!tx.length) { document.getElementById('summary-list').innerHTML='<div class="summary-empty">No transactions today.</div>'; return; }
   const by={};
   tx.forEach(t=>{ if(!by[t.customerId]) by[t.customerId]={id:t.customerId,name:t.customerName,tab:0,paid:0,credit:0,cardPaid:0,count:0}; if(t.type==='debt') by[t.customerId].tab+=t.amount; else if(t.type==='pay') { by[t.customerId].paid+=t.amount; if(t.method==='card') by[t.customerId].cardPaid+=t.amount; } else if(t.type==='credit') by[t.customerId].credit+=t.amount; by[t.customerId].count++; });
@@ -2052,16 +2054,129 @@ function openOwedList() {
 // ═══════════════════════════════════════════
 // SCREEN: MONTH REPORT
 // ═══════════════════════════════════════════
-let reportMonth = null; // { year, month } 0-indexed
+let reportMonth = null; // { year, month, summary } — month 0-indexed; summary=true means year-summary page
 
 function changeMonth(dir) {
+  if (reportMonth.summary) {
+    // On a year-summary page for reportMonth.year
+    if (dir < 0) {
+      // Going back in time → December of that year
+      reportMonth.summary = false;
+      reportMonth.month = 11;
+    } else {
+      // Going forward in time → January of next year
+      reportMonth.summary = false;
+      reportMonth.month = 0;
+      reportMonth.year += 1;
+    }
+    renderMonthReport();
+    return;
+  }
+  if (dir < 0 && reportMonth.month === 0) {
+    // Prev from January → year-summary page for previous year
+    reportMonth.summary = true;
+    reportMonth.year -= 1;
+    renderMonthReport();
+    return;
+  }
+  if (dir > 0 && reportMonth.month === 11) {
+    // Next from December → year-summary page for this year
+    reportMonth.summary = true;
+    renderMonthReport();
+    return;
+  }
   reportMonth.month += dir;
   if (reportMonth.month > 11) { reportMonth.month = 0; reportMonth.year++; }
   if (reportMonth.month < 0)  { reportMonth.month = 11; reportMonth.year--; }
   renderMonthReport();
 }
 
+function renderYearSummary() {
+  const { year } = reportMonth;
+  document.getElementById('htab-month').textContent = 'Year ' + year;
+  document.getElementById('month-title-display').textContent = year;
+  document.getElementById('month-subtitle').textContent = 'Year summary';
+
+  const st = getState();
+  let yCash=0, yCard=0, yLoss=0, yRemoved=0;
+  st.transactions.forEach(t => {
+    const d = new Date(getDayStart(t.ts));
+    if (d.getFullYear() !== year) return;
+    if (t.type === 'pay') { if(t.method==='card') yCard += t.amount; else yCash += t.amount; }
+    else if (t.type === 'adjustment') { yRemoved += t.amount; }
+    else if (t.type === 'writeoff') yLoss += t.amount;
+  });
+  const income = yCash + yCard;
+  const deductions = yLoss + yRemoved;
+  const net = income - deductions;
+
+  // Hide the box-row totals for the year view — we show a full statement instead
+  document.getElementById('month-totals').style.display = 'none';
+
+  const row = (label, value, opts) => {
+    opts = opts || {};
+    const color = opts.color || 'var(--text)';
+    const weight = opts.bold ? '700' : '500';
+    const size = opts.big ? '1.2em' : '1em';
+    const sign = value < 0 ? '\u2212' : (opts.plus ? '+' : '');
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:0.4em 0;${opts.border?'border-top:1px solid var(--border2);margin-top:0.3em;padding-top:0.6em;':''}">
+      <span style="color:${opts.labelColor||'var(--text3)'};font-size:${size};font-weight:${weight};">${label}</span>
+      <span style="color:${color};font-size:${size};font-weight:${weight};">${sign}${f(Math.abs(value))} \u20ac</span>
+    </div>`;
+  };
+
+  const sectionTitle = (t) => `<div style="color:var(--gold2);font-size:0.8em;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin:0.7em 0 0.2em;">${t}</div>`;
+
+  const statement = `
+    <div style="background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:1.1em 1.2em;margin-bottom:1em;">
+      ${sectionTitle('Income')}
+      ${row('Cash', yCash, {color:'var(--green)', plus:true})}
+      ${row('Card', yCard, {color:'var(--blue)', plus:true})}
+      ${row('Total in', income, {color:'var(--green)', plus:true, bold:true, border:true})}
+
+      ${sectionTitle('Deductions')}
+      ${row('Written off', -yLoss, {color:'var(--red)'})}
+      ${row('Expenses', -yRemoved, {color:'var(--gold2)'})}
+      ${row('Total out', -deductions, {color:'var(--red)', bold:true, border:true})}
+
+      <div style="border-top:2px solid var(--gold);margin-top:0.7em;padding-top:0.7em;">
+        ${row('Net total', net, {color: net>=0?'var(--green)':'var(--red)', plus:true, bold:true, big:true, labelColor:'var(--gold2)'})}
+      </div>
+    </div>`;
+
+  // Per-month breakdown below the statement
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mPaid = new Array(12).fill(0);
+  st.transactions.forEach(t => {
+    const d = new Date(getDayStart(t.ts));
+    if (d.getFullYear() !== year) return;
+    const m = d.getMonth();
+    if (t.type === 'pay') mPaid[m] += t.amount;
+    else if (t.type === 'adjustment') mPaid[m] -= t.amount;
+  });
+  let rows = '';
+  for (let m = 11; m >= 0; m--) {
+    if (mPaid[m] === 0) continue;
+    const sign = mPaid[m] >= 0 ? '+' : '\u2212';
+    const cls = mPaid[m] >= 0 ? 'month-row-paid' : 'month-row-tab';
+    rows += `<button class="month-row" onclick="gotoMonth(${year},${m})">
+      <div class="month-row-date">${monthNames[m]} ${year}</div>
+      <div class="month-row-right"><div class="${cls}">${sign}${f(Math.abs(mPaid[m]))} \u20ac</div></div>
+    </button>`;
+  }
+  const monthsBlock = rows ? (sectionTitle('Months') + rows) : '';
+
+  document.getElementById('month-list').innerHTML = statement + monthsBlock;
+}
+
+function gotoMonth(year, month) {
+  reportMonth = { year: year, month: month, summary: false };
+  renderMonthReport();
+}
+
 function renderMonthReport() {
+  if (reportMonth.summary) { renderYearSummary(); return; }
+  document.getElementById('month-totals').style.display = '';
   const { year, month } = reportMonth;
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('htab-month').textContent = monthNames[month].slice(0,3) + ' ' + year;
@@ -2079,24 +2194,26 @@ function renderMonthReport() {
     const d = new Date(ds);
     if (d.getFullYear() !== year || d.getMonth() !== month) return;
     const key = ds;
-    if (!dayMap[key]) dayMap[key] = { date: d, tab: 0, paid: 0, cash: 0, card: 0, loss: 0, dayStart: ds };
+    if (!dayMap[key]) dayMap[key] = { date: d, tab: 0, paid: 0, cash: 0, card: 0, loss: 0, removed: 0, dayStart: ds };
     if (t.type === 'debt') dayMap[key].tab += t.amount;
     else if (t.type === 'pay') { dayMap[key].paid += t.amount; if(t.method==='card') dayMap[key].card += t.amount; else dayMap[key].cash += t.amount; }
-    else if (t.type === 'adjustment') { dayMap[key].paid -= t.amount; dayMap[key].cash -= t.amount; }
+    else if (t.type === 'adjustment') { dayMap[key].paid -= t.amount; dayMap[key].cash -= t.amount; dayMap[key].removed += t.amount; }
     else if (t.type === 'writeoff') dayMap[key].loss += t.amount;
   });
 
   const days = Object.values(dayMap).sort((a,b) => b.date - a.date);
 
-  let totalTab = 0, totalPaid = 0, totalCash = 0, totalCard = 0, totalLoss = 0;
-  days.forEach(d => { totalTab += d.tab; totalPaid += d.paid; totalCash += d.cash; totalCard += d.card; totalLoss += (d.loss||0); });
+  let totalTab = 0, totalPaid = 0, totalCash = 0, totalCard = 0, totalLoss = 0, totalRemoved = 0;
+  days.forEach(d => { totalTab += d.tab; totalPaid += d.paid; totalCash += d.cash; totalCard += d.card; totalLoss += (d.loss||0); totalRemoved += (d.removed||0); });
 
   const mLossBox = totalLoss > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(totalLoss)} \u20ac</div></div>` : '';
+  const mRemovedBox = totalRemoved > 0 ? `<div class="total-box" style="border:1.5px solid var(--gold);"><div class="total-lbl">Expenses</div><div class="total-val" style="color:var(--gold2);">\u2212${f(totalRemoved)} \u20ac</div></div>` : '';
   document.getElementById('month-totals').innerHTML =
     `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${totalPaid >= 0 ? 'green' : 'red'}">${totalPaid < 0 ? '\u2212' : '+'}${f(Math.abs(totalPaid))} \u20ac</div></div>
      <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val ${totalCash >= 0 ? 'green' : 'red'}">${totalCash < 0 ? '\u2212' : ''}${f(Math.abs(totalCash))} \u20ac</div></div>
      <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:${totalCard >= 0 ? 'var(--blue)' : 'var(--red)'};">${totalCard < 0 ? '\u2212' : ''}${f(Math.abs(totalCard))} \u20ac</div></div>
-     ${mLossBox}`;
+     ${mLossBox}
+     ${mRemovedBox}`;
 
   document.getElementById('month-subtitle').textContent = days.length + ' day' + (days.length!==1?'s':'') + ' with activity';
 
@@ -2182,7 +2299,7 @@ function openTxDetail(context, key, label) {
       const payClass = allCard ? '' : 'pay';
       const payStyle = allCard ? 'style="color:var(--blue);"' : '';
       const creditLine = r.credit > 0 ? `<div class="tx-row-amt" style="color:var(--gold2);font-size:0.93em;">+${f(r.credit)} \u20ac credit</div>` : '';
-      const adjLine = r.adjustment > 0 ? `<div class="tx-row-amt debt" style="font-size:0.93em;">\u2212${f(r.adjustment)} \u20ac removed</div>` : '';
+      const adjLine = r.adjustment > 0 ? `<div class="tx-row-amt debt" style="font-size:0.93em;">\u2212${f(r.adjustment)} \u20ac expense</div>` : '';
       let amtHtml = '';
       if (r.adjustment > 0 && r.paid === 0 && r.tab === 0) {
         amtHtml = `<div class="tx-row-amt debt">\u2212${f(r.adjustment)} \u20ac</div>`;
@@ -2355,7 +2472,7 @@ function setCashAdjType(type) {
   document.getElementById('cadj-remove').className = 'mode-btn' + (type==='remove' ? ' active-debt' : '');
   const btn = document.getElementById('cadj-btn');
   btn.className = 'btn-confirm-charge ' + (type==='add' ? 'pay' : 'debt');
-  btn.textContent = type==='add' ? 'Add cash' : 'Remove cash';
+  btn.textContent = type==='add' ? 'Add cash' : 'Add expense';
   updateCadjBtn();
 }
 
@@ -2383,7 +2500,7 @@ function doCashAdj() {
     customerName: 'Cash adjustment',
     type: cashAdjType === 'add' ? 'pay' : 'adjustment',
     amount: val,
-    note: note || (cashAdjType==='add' ? 'Cash added' : 'Cash removed')
+    note: note || (cashAdjType==='add' ? 'Cash added' : 'Expense')
   });
   saveState(st);
   document.getElementById('cadj-amount').value = '';
