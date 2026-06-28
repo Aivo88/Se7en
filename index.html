@@ -989,7 +989,7 @@ function renderCustomerList() {
       if (t.method === 'card') cardTotal += t.amount;
       else cashTotal += t.amount; // default/unmarked = cash
     }
-    else if (t.type === 'adjustment') { cashIn -= t.amount; cashTotal -= t.amount; }
+    // Expenses (adjustments) are NOT deducted on the home screen — they show in History/reports only
   });
   // Total owed = sum of all negative balances across all customers
   const totalOwed = st.customers.reduce((sum, c) => c.balance < 0 ? sum + Math.abs(c.balance) : sum, 0);
