@@ -1623,7 +1623,7 @@ function renderDaySummary() {
   tx.forEach(t=>{
     if(t.type==='debt') grandTab+=t.amount;
     else if(t.type==='pay') { grandIn+=t.amount; if(t.method==='card') cardIn+=t.amount; else cashIn+=t.amount; }
-    else if(t.type==='adjustment') { grandIn-=t.amount; removedIn+=t.amount; }
+    else if(t.type==='adjustment') { removedIn+=t.amount; }
     else if(t.type==='writeoff') lossIn+=t.amount;
   });
   const lossBox = lossIn > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(lossIn)} \u20ac</div></div>` : '';
@@ -2154,7 +2154,6 @@ function renderYearSummary() {
     if (d.getFullYear() !== year) return;
     const m = d.getMonth();
     if (t.type === 'pay') mPaid[m] += t.amount;
-    else if (t.type === 'adjustment') mPaid[m] -= t.amount;
   });
   let rows = '';
   for (let m = 11; m >= 0; m--) {
@@ -2199,7 +2198,7 @@ function renderMonthReport() {
     if (!dayMap[key]) dayMap[key] = { date: d, tab: 0, paid: 0, cash: 0, card: 0, loss: 0, removed: 0, dayStart: ds };
     if (t.type === 'debt') dayMap[key].tab += t.amount;
     else if (t.type === 'pay') { dayMap[key].paid += t.amount; if(t.method==='card') dayMap[key].card += t.amount; else dayMap[key].cash += t.amount; }
-    else if (t.type === 'adjustment') { dayMap[key].paid -= t.amount; dayMap[key].removed += t.amount; }
+    else if (t.type === 'adjustment') { dayMap[key].removed += t.amount; }
     else if (t.type === 'writeoff') dayMap[key].loss += t.amount;
   });
 
