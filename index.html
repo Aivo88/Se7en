@@ -158,7 +158,7 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
 .summary-hdr{background:var(--bg2);padding:1em 1.14em;border-bottom:2px solid var(--border2);flex-shrink:0;}
 .summary-title{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.4em;font-weight:700;margin-bottom:3px;}
 .summary-period{font-size:0.93em;color:var(--text3);}
-.summary-totals{display:flex;flex-wrap:wrap;gap:0.71em;padding:0.85em 1em;background:var(--bg3);border-bottom:2px solid var(--border2);flex-shrink:0;}
+.summary-totals{display:flex;flex-wrap:wrap;gap:0.71em;padding:0.85em 1em;background:var(--bg3);border-bottom:2px solid var(--border2);}
 .total-box{flex:1;min-width:120px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;padding:0.85em 0.71em;text-align:center;}
 .total-lbl{font-size:0.71em;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:6px;}
 .total-val{font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;font-size:1.4em;font-weight:700;}
@@ -366,8 +366,10 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
   </div>
 
   <!-- TAB: Day -->
-  <div class="summary-totals" id="summary-totals"></div>
-  <div class="summary-list" id="summary-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 6px;"></div>
+  <div id="hpanel-day" style="display:none;flex:1;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;">
+    <div class="summary-totals" id="summary-totals"></div>
+    <div class="summary-list" id="summary-list" style="padding:10px 12px 6px;"></div>
+  </div>
 
   <!-- TAB: Month -->
   <div id="hpanel-month" style="display:none;-webkit-flex:1;flex:1;-webkit-flex-direction:column;flex-direction:column;min-height:0;">
@@ -376,9 +378,11 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
       <div style="font-family:'Palatino Linotype','Palatino','Book Antiqua',Georgia,serif;color:var(--gold2);font-size:1.2em;font-weight:700;" id="month-title-display"></div>
       <button class="btn-month-nav" onclick="changeMonth(1)">Next &#x2192;</button>
     </div>
-    <div style="padding:6px 14px;font-size:0.93em;color:var(--text3);" id="month-subtitle"></div>
-    <div class="summary-totals" id="month-totals"></div>
-    <div class="summary-list" id="month-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 6px;"></div>
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;">
+      <div style="padding:6px 14px;font-size:0.93em;color:var(--text3);" id="month-subtitle"></div>
+      <div class="summary-totals" id="month-totals"></div>
+      <div class="summary-list" id="month-list" style="padding:10px 12px 6px;"></div>
+    </div>
   </div>
 
   <!-- TAB: Raw -->
@@ -1596,8 +1600,7 @@ function switchHistoryTab(tab) {
     document.getElementById('htab-'+t).className = 'charge-tab' + (t===tab?' active':'');
   });
   // Show/hide panels
-  document.getElementById('summary-totals').style.display = tab==='day' ? '' : 'none';
-  document.getElementById('summary-list').style.display = tab==='day' ? '' : 'none';
+  document.getElementById('hpanel-day').style.display = tab==='day' ? 'flex' : 'none';
   document.getElementById('hpanel-month').style.display = tab==='month' ? 'flex' : 'none';
   document.getElementById('hpanel-raw').style.display = tab==='raw' ? '' : 'none';
   if (tab==='day') renderDaySummary();
