@@ -793,6 +793,27 @@ function saveState(st) {
 // ═══════════════════════════════════════════
 function f(n) { return Number(n).toFixed(2); }
 function parseAmount(v) { return parseFloat(String(v).replace(',', '.')); }
+
+// 2-column summary grid: left = income (Total/Cash/Card), right = result (Net/Expenses/Loss)
+function summaryGridHTML(cash, card, expenses, loss) {
+  const income = cash + card;
+  const net = income - expenses - loss;
+  const box = (label, valHtml, borderColor) =>
+    `<div class="total-box" style="border:1.5px solid ${borderColor};"><div class="total-lbl">${label}</div><div class="total-val">${valHtml}</div></div>`;
+  const signed = (v, color, plus) => {
+    const s = v < 0 ? '\u2212' : (plus ? '+' : '');
+    return `<span style="color:${color};">${s}${f(Math.abs(v))} \u20ac</span>`;
+  };
+  const neg = (v, color) => `<span style="color:${color};">${v>0?'\u2212':''}${f(Math.abs(v))} \u20ac</span>`;
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.71em;width:100%;">
+    ${box('Total', signed(income, income>=0?'var(--green)':'var(--red)', true), 'var(--border2)')}
+    ${box('Net total', signed(net, net>=0?'var(--green)':'var(--red)', true), 'var(--gold)')}
+    ${box('Cash', signed(cash, cash>=0?'var(--green)':'var(--red)', false), 'var(--green)')}
+    ${box('Expenses', neg(expenses, 'var(--gold2)'), 'var(--gold)')}
+    ${box('Card', signed(card, card>=0?'var(--blue)':'var(--red)', false), 'var(--blue)')}
+    ${box('Loss', neg(loss, 'var(--red)'), 'var(--red)')}
+  </div>`;
+}
 function txClass(t) {
   if (t.type === 'debt') return 'debt';
   if (t.type === 'credit') return 'credit';
@@ -1626,14 +1647,7 @@ function renderDaySummary() {
     else if(t.type==='adjustment') { removedIn+=t.amount; }
     else if(t.type==='writeoff') lossIn+=t.amount;
   });
-  const lossBox = lossIn > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(lossIn)} \u20ac</div></div>` : '';
-  const removedBox = removedIn > 0 ? `<div class="total-box" style="border:1.5px solid var(--gold);"><div class="total-lbl">Expenses</div><div class="total-val" style="color:var(--gold2);">\u2212${f(removedIn)} \u20ac</div></div>` : '';
-  document.getElementById('summary-totals').innerHTML =
-    `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${grandIn >= 0 ? 'green' : 'red'}">${grandIn < 0 ? '\u2212' : '+'}${f(Math.abs(grandIn))} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val ${cashIn >= 0 ? 'green' : 'red'}">${cashIn < 0 ? '\u2212' : ''}${f(Math.abs(cashIn))} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:${cardIn >= 0 ? 'var(--blue)' : 'var(--red)'};">${cardIn < 0 ? '\u2212' : ''}${f(Math.abs(cardIn))} \u20ac</div></div>
-     ${lossBox}
-     ${removedBox}`;
+  document.getElementById('summary-totals').innerHTML = summaryGridHTML(cashIn, cardIn, removedIn, lossIn);
   if (!tx.length) { document.getElementById('summary-list').innerHTML='<div class="summary-empty">No transactions today.</div>'; return; }
   const by={};
   tx.forEach(t=>{ if(!by[t.customerId]) by[t.customerId]={id:t.customerId,name:t.customerName,tab:0,paid:0,credit:0,cardPaid:0,count:0}; if(t.type==='debt') by[t.customerId].tab+=t.amount; else if(t.type==='pay') { by[t.customerId].paid+=t.amount; if(t.method==='card') by[t.customerId].cardPaid+=t.amount; } else if(t.type==='credit') by[t.customerId].credit+=t.amount; by[t.customerId].count++; });
@@ -2207,14 +2221,7 @@ function renderMonthReport() {
   let totalTab = 0, totalPaid = 0, totalCash = 0, totalCard = 0, totalLoss = 0, totalRemoved = 0;
   days.forEach(d => { totalTab += d.tab; totalPaid += d.paid; totalCash += d.cash; totalCard += d.card; totalLoss += (d.loss||0); totalRemoved += (d.removed||0); });
 
-  const mLossBox = totalLoss > 0 ? `<div class="total-box" style="border:1.5px solid var(--red);"><div class="total-lbl">Loss</div><div class="total-val red">\u2212${f(totalLoss)} \u20ac</div></div>` : '';
-  const mRemovedBox = totalRemoved > 0 ? `<div class="total-box" style="border:1.5px solid var(--gold);"><div class="total-lbl">Expenses</div><div class="total-val" style="color:var(--gold2);">\u2212${f(totalRemoved)} \u20ac</div></div>` : '';
-  document.getElementById('month-totals').innerHTML =
-    `<div class="total-box"><div class="total-lbl">Total</div><div class="total-val ${totalPaid >= 0 ? 'green' : 'red'}">${totalPaid < 0 ? '\u2212' : '+'}${f(Math.abs(totalPaid))} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--green);"><div class="total-lbl">Cash</div><div class="total-val ${totalCash >= 0 ? 'green' : 'red'}">${totalCash < 0 ? '\u2212' : ''}${f(Math.abs(totalCash))} \u20ac</div></div>
-     <div class="total-box" style="border:1.5px solid var(--blue);"><div class="total-lbl">Card</div><div class="total-val" style="color:${totalCard >= 0 ? 'var(--blue)' : 'var(--red)'};">${totalCard < 0 ? '\u2212' : ''}${f(Math.abs(totalCard))} \u20ac</div></div>
-     ${mLossBox}
-     ${mRemovedBox}`;
+  document.getElementById('month-totals').innerHTML = summaryGridHTML(totalCash, totalCard, totalRemoved, totalLoss);
 
   document.getElementById('month-subtitle').textContent = days.length + ' day' + (days.length!==1?'s':'') + ' with activity';
 
