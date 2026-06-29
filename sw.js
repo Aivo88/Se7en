@@ -1,5 +1,5 @@
 // SE7EN Service Worker — caches the app for full offline use
-const CACHE = 'se7en-v32';
+const CACHE = 'se7en-v33';
 // Relative paths + the directory root so it works in a GitHub Pages subfolder
 const ASSETS = [
   './',

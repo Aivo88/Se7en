@@ -366,7 +366,7 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
   </div>
 
   <!-- TAB: Day -->
-  <div id="hpanel-day" style="display:none;flex:1;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;">
+  <div id="hpanel-day" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;">
     <div class="summary-totals" id="summary-totals"></div>
     <div class="summary-list" id="summary-list" style="padding:10px 12px 6px;"></div>
   </div>
@@ -1600,7 +1600,7 @@ function switchHistoryTab(tab) {
     document.getElementById('htab-'+t).className = 'charge-tab' + (t===tab?' active':'');
   });
   // Show/hide panels
-  document.getElementById('hpanel-day').style.display = tab==='day' ? 'flex' : 'none';
+  document.getElementById('hpanel-day').style.display = tab==='day' ? '' : 'none';
   document.getElementById('hpanel-month').style.display = tab==='month' ? 'flex' : 'none';
   document.getElementById('hpanel-raw').style.display = tab==='raw' ? '' : 'none';
   if (tab==='day') renderDaySummary();
